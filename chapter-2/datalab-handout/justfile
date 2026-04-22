@@ -1,0 +1,7 @@
+test:
+    make clean
+    make btest
+    ./btest
+
+check:
+    ./dlc bits.c

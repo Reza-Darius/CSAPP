@@ -1,0 +1,3 @@
+run:
+    gcc homework.c -o homework
+    ./homework
