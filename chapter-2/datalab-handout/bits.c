@@ -277,16 +277,78 @@ int logicalNeg(int x) {
  *  Legal ops: ! ~ & ^ | + << >>
  *  Max ops: 90
  *  Rating: 4
+
+
+ -5 = 1111 1111 1011 ^ = 0000 0000 0100
+ TMIN = 1000 0000 0000 = 0111 1111 1111
+
+// normal case, x = 13 + 64 = 77
+expected output = 8
+
+int s = !(x >> 31);
+s = 1 if x is positive, which we add later
+
+01001101
+y = !!(x >> 4)
+00000100
+y = 1
+bits = y << 2 = 4
+c += bits
+x >>= bits
+
+00000100
+y = !!(x >> 2)
+00000001
+y = 1
+bits = y << 1 = 2
+c += bits = 6
+x >>= bits
+
+00000001
+y = !!(x)
+y = 1
+bits += y = 7
+
+return bits + sign
+
  */
 int howManyBits(int x) {
-    // 1 if x is negative
-    int n = x ^ (x >> 31);
-    int is_neg = !!((x >> 31) & 1);
+    // normalize number so a negative number can be counted like a positive
+    x = x ^ (x >> 31);
 
-    int z = ~x;
     int count = 0;
-    count += 1 << 31;
-    return 0;
+    int y, bits;
+
+    y = !!(x >> 16); // 1 if one of the top 16 bits is set
+    bits = y << 4; // a set bit means we need 16 bits at least
+    count += bits; // add them to our counter
+    x >>= bits; // shift the whole number
+
+    y = !!(x >> 8);
+    bits = y << 3;
+    count += bits;
+    x >>= bits;
+
+    y = !!(x >> 4);
+    bits = y << 2;
+    count += bits;
+    x >>= bits;
+
+    y = !!(x >> 2);
+    bits = y << 1;
+    count += bits;
+    x >>= bits;
+
+    y = !!(x >> 1);
+    bits = y;
+    count += bits;
+    x >>= bits;
+
+    y = !!(x);
+    bits = y;
+    count += bits;
+
+    return count + 1;
 }
 //float
 /*
@@ -301,6 +363,19 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
+    int bias = 127;
+    int sign = uf >> 31;
+
+    unsigned exp = (uf >> 23) & 0xFF;
+    if (exp == 0xFF || exp == 0xFF - 1) {
+        return uf;
+    }
+    int E = exp + 1 - bias;
+
+    unsigned M = (uf << 9) >> 24;
+    M <<= 2;
+
+
   return 2;
 }
 /*
