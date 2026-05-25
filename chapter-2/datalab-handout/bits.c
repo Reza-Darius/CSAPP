@@ -132,9 +132,8 @@ NOTES:
  *      the correct answers.
  */
 
-
 #endif
-//1
+// 1
 /*
  * bitXor - x^y using only ~ and &
  *   Example: bitXor(4, 5) = 1
@@ -143,10 +142,10 @@ NOTES:
  *   Rating: 1
  */
 int bitXor(int x, int y) {
-    int m = x & y;
-    int m2 = ~x & ~y;
+  int m = x & y;
+  int m2 = ~x & ~y;
 
-    return ~m & ~m2;
+  return ~m & ~m2;
 }
 /*
  * tmin - return minimum two's complement integer
@@ -154,11 +153,8 @@ int bitXor(int x, int y) {
  *   Max ops: 4
  *   Rating: 1
  */
-int tmin(void) {
-    return 1 << 31;
-
-}
-//2
+int tmin(void) { return 1 << 31; }
+// 2
 /*
  * isTmax - returns 1 if x is the maximum, two's complement number,
  *     and 0 otherwise
@@ -167,13 +163,13 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-    // x + 1 == ~x is only true for TMax and -1
-    // so tmax + 1 ^ ~x = 0
+  // x + 1 == ~x is only true for TMax and -1
+  // so tmax + 1 ^ ~x = 0
 
-    // we have to eliminate the x = -1 case
-    int offset = !(x ^ ~0);
+  // we have to eliminate the x = -1 case
+  int offset = !(x ^ ~0);
 
-  return !((x + 1 + offset)^(~x));
+  return !((x + 1 + offset) ^ (~x));
 }
 /*
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -184,13 +180,13 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-    // we build up the mask of 1010 1010 bytes
-    int m = 0xAA;
-    m += m << 8;
-    m += m << 16;
-    int r = x & m;
-    int y = !(r ^ m);
-    return y;
+  // we build up the mask of 1010 1010 bytes
+  int m = 0xAA;
+  m += m << 8;
+  m += m << 16;
+  int r = x & m;
+  int y = !(r ^ m);
+  return y;
 }
 /*
  * negate - return -x
@@ -199,27 +195,24 @@ int allOddBits(int x) {
  *   Max ops: 5
  *   Rating: 2
  */
-int negate(int x) {
-  return ~x + 1;
-}
-//3
+int negate(int x) { return ~x + 1; }
+// 3
 /*
- * isAsciiDigit - return 1 if 0x30 <= x <= 0x39 (ASCII codes for characters '0' to '9')
- *   Example: isAsciiDigit(0x35) = 1.
- *            isAsciiDigit(0x3a) = 0.
+ * isAsciiDigit - return 1 if 0x30 <= x <= 0x39 (ASCII codes for characters '0'
+ * to '9') Example: isAsciiDigit(0x35) = 1. isAsciiDigit(0x3a) = 0.
  *            isAsciiDigit(0x05) = 0.
  *   Legal ops: ! ~ & ^ | + << >>
  *   Max ops: 15
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
-    int lower = x + (~0x30 + 1);
-    int low_ok = !((lower >> 31) & 1);
+  int lower = x + (~0x30 + 1);
+  int low_ok = !((lower >> 31) & 1);
 
-    int upper = 0x39 + (~x + 1);
-    int upper_ok = !((upper >> 31) & 1);
+  int upper = 0x39 + (~x + 1);
+  int upper_ok = !((upper >> 31) & 1);
 
-    return low_ok & upper_ok;
+  return low_ok & upper_ok;
 }
 /*
  * conditional - same as x ? y : z
@@ -229,12 +222,12 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-    // results 1 for "true" and 0 for "false"
-    int cond = !!x;
-    // create a 1111 mask for true, and 0000 mask for false
-    int mask = (cond << 31) >> 31;
-    int arm1 = y & mask;
-    int arm2 = z & ~mask;
+  // results 1 for "true" and 0 for "false"
+  int cond = !!x;
+  // create a 1111 mask for true, and 0000 mask for false
+  int mask = (cond << 31) >> 31;
+  int arm1 = y & mask;
+  int arm2 = z & ~mask;
   return arm1 | arm2;
 }
 /*
@@ -245,15 +238,15 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-    int diff = y + (~x + 1);
-    int diff_sign = (diff >> 31) & 1;
-    int x_sign = (x >> 31) & 1;
-    int y_sign = (y >> 31) & 1;
-    int sign_diff = x_sign ^ y_sign;
+  int diff = y + (~x + 1);
+  int diff_sign = (diff >> 31) & 1;
+  int x_sign = (x >> 31) & 1;
+  int y_sign = (y >> 31) & 1;
+  int sign_diff = x_sign ^ y_sign;
 
-    return (sign_diff & x_sign) | (!sign_diff & !diff_sign);
+  return (sign_diff & x_sign) | (!sign_diff & !diff_sign);
 }
-//4
+// 4
 /*
  * logicalNeg - implement the ! operator, using all of
  *              the legal operators except !
@@ -263,7 +256,7 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4
  */
 int logicalNeg(int x) {
-    int y = ((x | (~x + 1)) >> 31) & 1;
+  int y = ((x | (~x + 1)) >> 31) & 1;
   return y ^ 1;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
@@ -313,44 +306,44 @@ return bits + sign
 
  */
 int howManyBits(int x) {
-    // normalize number so a negative number can be counted like a positive
-    x = x ^ (x >> 31);
+  // normalize number so a negative number can be counted like a positive
+  x = x ^ (x >> 31);
 
-    int count = 0;
-    int y, bits;
+  int count = 0;
+  int y, bits;
 
-    y = !!(x >> 16); // 1 if one of the top 16 bits is set
-    bits = y << 4; // a set bit means we need 16 bits at least
-    count += bits; // add them to our counter
-    x >>= bits; // shift the whole number
+  y = !!(x >> 16); // 1 if one of the top 16 bits is set
+  bits = y << 4;   // a set bit means we need 16 bits at least
+  count += bits;   // add them to our counter
+  x >>= bits;      // shift the whole number
 
-    y = !!(x >> 8);
-    bits = y << 3;
-    count += bits;
-    x >>= bits;
+  y = !!(x >> 8);
+  bits = y << 3;
+  count += bits;
+  x >>= bits;
 
-    y = !!(x >> 4);
-    bits = y << 2;
-    count += bits;
-    x >>= bits;
+  y = !!(x >> 4);
+  bits = y << 2;
+  count += bits;
+  x >>= bits;
 
-    y = !!(x >> 2);
-    bits = y << 1;
-    count += bits;
-    x >>= bits;
+  y = !!(x >> 2);
+  bits = y << 1;
+  count += bits;
+  x >>= bits;
 
-    y = !!(x >> 1);
-    bits = y;
-    count += bits;
-    x >>= bits;
+  y = !!(x >> 1);
+  bits = y;
+  count += bits;
+  x >>= bits;
 
-    y = !!(x);
-    bits = y;
-    count += bits;
+  y = !!(x);
+  bits = y;
+  count += bits;
 
-    return count + 1;
+  return count + 1;
 }
-//float
+// float
 /*
  * floatScale2 - Return bit-level equivalent of expression 2*f for
  *   floating point argument f.
@@ -363,20 +356,38 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-    int bias = 127;
-    int sign = uf >> 31;
+  // normalizing sign bit to 0
+  int n = uf & ~(1 << 31);
 
-    unsigned exp = (uf >> 23) & 0xFF;
-    if (exp == 0xFF || exp == 0xFF - 1) {
-        return uf;
-    }
-    int E = exp + 1 - bias;
+  if (!n) {
+    // uf is 0, we can just return
+    return uf;
+  }
 
-    unsigned M = (uf << 9) >> 24;
-    M <<= 2;
+  int e_mask = 0xFF << 23;
+  int m_mask = ~(0x1FF << 23);
 
+  int sign = uf & (1 << 31);
+  int e = ((n & e_mask) >> 23);
+  int m = n & m_mask;
 
-  return 2;
+  // return if uf is NaN
+  if (!(e ^ 0xFF)) {
+    return uf;
+  };
+
+  if (e) {
+    // normalized case
+
+    // adding 1 to exponent field multiplies by 2
+    e += 1;
+    e <<= 23;
+
+    return sign + e + m;
+  } else {
+    // denormalized case, we can just shift the mantissa
+    return sign + (m << 1);
+  }
 }
 /*
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -390,9 +401,7 @@ unsigned floatScale2(unsigned uf) {
  *   Max ops: 30
  *   Rating: 4
  */
-int floatFloat2Int(unsigned uf) {
-  return 2;
-}
+int floatFloat2Int(unsigned uf) { return 2; }
 /*
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
  *   (2.0 raised to the power x) for any 32-bit integer x.
@@ -406,6 +415,4 @@ int floatFloat2Int(unsigned uf) {
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatPower2(int x) {
-    return 2;
-}
+unsigned floatPower2(int x) { return 2; }

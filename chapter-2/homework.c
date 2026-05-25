@@ -2,44 +2,43 @@
 /*
  * 2.58 ◆◆
  * Write a procedure is_little_endian that will return 1 when compiled and run
- on a little-endian machine, and will return 0 when compiled and run on a bigendian
- machine. This program should run on any machine, regardless of its word
- size.
+ on a little-endian machine, and will return 0 when compiled and run on a
+ bigendian machine. This program should run on any machine, regardless of its
+ word size.
  */
 int is_little_endian() {
-    int x = 1 << 31;
-    char* ptr = (char*) &x;
-    return ptr[0] == 0;
+  int x = 1 << 31;
+  char *ptr = (char *)&x;
+  return ptr[0] == 0;
 };
 
 /*
  * 2.59 ◆◆
- * Write aCexpression that will yield a word consisting of the least significant byte of
- x and the remaining bytes of y. For operands x=0x89ABCDEF and y=0x76543210,
- this would give 0x765432EF.
+ * Write aCexpression that will yield a word consisting of the least significant
+ byte of x and the remaining bytes of y. For operands x=0x89ABCDEF and
+ y=0x76543210, this would give 0x765432EF.
  */
 int two_five_nine(int x, int y) {
-    char* x_ptr = (char*) &x;
-    char* y_ptr = (char*) &y;
-    y_ptr[0] = x_ptr[0];
-    return *(int*) y_ptr;
+  char *x_ptr = (char *)&x;
+  char *y_ptr = (char *)&y;
+  y_ptr[0] = x_ptr[0];
+  return *(int *)y_ptr;
 };
 
 /*
  * 2.60 ◆◆
- Suppose we number the bytes in a w-bit word from 0 (least significant) to w/8 − 1
- (most significant). Write code for the following C function, which will return an
- unsigned value in which byte i of argument x has been replaced by byte b:
- unsigned replace_byte (unsigned x, int i, unsigned char b);
- Here are some examples showing how the function should work:
- replace_byte(0x12345678, 2, 0xAB) --> 0x12AB5678
- replace_byte(0x12345678, 0, 0xAB) --> 0x123456AB
+ Suppose we number the bytes in a w-bit word from 0 (least significant) to w/8 −
+ 1 (most significant). Write code for the following C function, which will
+ return an unsigned value in which byte i of argument x has been replaced by
+ byte b: unsigned replace_byte (unsigned x, int i, unsigned char b); Here are
+ some examples showing how the function should work: replace_byte(0x12345678, 2,
+ 0xAB) --> 0x12AB5678 replace_byte(0x12345678, 0, 0xAB) --> 0x123456AB
  */
-unsigned replace_byte (unsigned x, int i, unsigned char b){
-    char* x_ptr = (char*) &x;
-    int idx = 3 - i;
-    x_ptr[i] = b;
-    return x;
+unsigned replace_byte(unsigned x, int i, unsigned char b) {
+  char *x_ptr = (char *)&x;
+  int idx = 3 - i;
+  x_ptr[i] = b;
+  return x;
 };
 
 /*
@@ -71,9 +70,9 @@ unsigned replace_byte (unsigned x, int i, unsigned char b){
 /*
  * 2.62 ◆◆◆
  Write a function int_shifts_are_arithmetic() that yields 1 when run on a
- machine that uses arithmetic right shifts for data type int and yields 0 otherwise.
- Your code should work on a machine with any word size. Test your code on several
- machines.
+ machine that uses arithmetic right shifts for data type int and yields 0
+ otherwise. Your code should work on a machine with any word size. Test your
+ code on several machines.
 
  mask = 0 - 1 = 1111
  y = mask >> 1 = 1111
@@ -87,19 +86,19 @@ unsigned replace_byte (unsigned x, int i, unsigned char b){
 
  */
 int int_shifts_are_arithmetic() {
-    int x = 0 - 1;
-    return !((x >> 1) ^ x);
+  int x = 0 - 1;
+  return !((x >> 1) ^ x);
 };
 
 /*
  * 2.63 ◆◆◆
- Fill in code for the following C functions. Function srl performs a logical right
- shift using an arithmetic right shift (given by value xsra), followed by other operations
- not including right shifts or division. Function sra performs an arithmetic
- right shift using a logical right shift (given by value xsrl), followed by other
- operations not including right shifts or division. You may use the computation
- 8*sizeof(int) to determine w, the number of bits in data type int. The shift
- amount k can range from 0 to w − 1.
+ Fill in code for the following C functions. Function srl performs a logical
+ right shift using an arithmetic right shift (given by value xsra), followed by
+ other operations not including right shifts or division. Function sra performs
+ an arithmetic right shift using a logical right shift (given by value xsrl),
+ followed by other operations not including right shifts or division. You may
+ use the computation 8*sizeof(int) to determine w, the number of bits in data
+ type int. The shift amount k can range from 0 to w − 1.
  */
 /*
 
@@ -135,16 +134,16 @@ n = w_size - k = 1
 
  */
 unsigned srl(unsigned x, int k) {
-    /* Perform shift arithmetically */
-    unsigned xsra = (int) x >> k;
-    int w_size = 8 * sizeof(int);
+  /* Perform shift arithmetically */
+  unsigned xsra = (int)x >> k;
+  int w_size = 8 * sizeof(int);
 
-    // creating mask of bits we want to keep
-    int n = w_size - k;
-    int check = ~!(w_size - n);
-    int mask = (check << n) - 1;
+  // creating mask of bits we want to keep
+  int n = w_size - k;
+  int check = ~!(w_size - n);
+  int mask = (check << n) - 1;
 
-    return xsra & mask;
+  return xsra & mask;
 };
 
 /*
@@ -204,20 +203,20 @@ xsrl | sign_mask = 1000 | 0000 = 1000
 
  */
 int sra(int x, int k) {
-    /* Perform shift logically */
-    int xsrl = (unsigned) x >> k;
-    int w_size = 8 * sizeof(int);
+  /* Perform shift logically */
+  int xsrl = (unsigned)x >> k;
+  int w_size = 8 * sizeof(int);
 
-    // creating mask of bits we want to keep
-    int n = w_size - k;
-    int check = ~!(w_size - n);
-    int mask = (check << n) - 1;
+  // creating mask of bits we want to keep
+  int n = w_size - k;
+  int check = ~!(w_size - n);
+  int mask = (check << n) - 1;
 
-    int sign = (1 << (w_size - 1)) & x;
-    int sign_mask = ~!sign;
-    sign_mask = sign_mask & ~mask;
+  int sign = (1 << (w_size - 1)) & x;
+  int sign_mask = ~!sign;
+  sign_mask = sign_mask & ~mask;
 
-    return xsrl | sign_mask;
+  return xsrl | sign_mask;
 };
 
 /*
@@ -230,8 +229,8 @@ except that you may assume that data type int has w = 32 bits.
 1010
  */
 int any_odd_one(unsigned x) {
-    int mask = 0xAAAAAAAA;
-    return !!(x & mask);
+  int mask = 0xAAAAAAAA;
+  return !!(x & mask);
 };
 
 /*
@@ -262,15 +261,16 @@ x = 1100 = 12
 output = 0
 111100 = 60
 */
-int odd_ones(unsigned x){
-    int mask = 0xAAAAAAAA;
-    return 0;
+int odd_ones(unsigned x) {
+  int mask = 0xAAAAAAAA;
+  int w_size = 32;
+  return 0;
 };
 
 int main() {
-    printf("is little endian: %d\n", is_little_endian());
-    printf("2.59: %x\n", two_five_nine(0x89ABCDEF , 0x76543210));
-    printf("replace byte: %x\n", replace_byte(0x12345678, 2, 0xAB));
-    printf("shifts are arithmetic: %d\n",int_shifts_are_arithmetic());
-    return 0;
+  printf("is little endian: %d\n", is_little_endian());
+  printf("2.59: %x\n", two_five_nine(0x89ABCDEF, 0x76543210));
+  printf("replace byte: %x\n", replace_byte(0x12345678, 2, 0xAB));
+  printf("shifts are arithmetic: %d\n", int_shifts_are_arithmetic());
+  return 0;
 }
