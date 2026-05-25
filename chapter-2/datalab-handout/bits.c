@@ -401,7 +401,35 @@ unsigned floatScale2(unsigned uf) {
  *   Max ops: 30
  *   Rating: 4
  */
-int floatFloat2Int(unsigned uf) { return 2; }
+int floatFloat2Int(unsigned uf) {
+  // normalizing sign bit to 0
+  int n = uf & ~(1 << 31);
+
+  if (!n) {
+    // uf is 0, we can just return 0
+    return 0;
+  }
+
+  int e_mask = 0xFF << 23;
+  int m_mask = ~(0x1FF << 23);
+
+  int sign = uf & (1 << 31);
+  int e = ((n & e_mask) >> 23);
+  int m = n & m_mask;
+
+  if (!(e ^ 0xFF)) {
+    return 0x80000000;
+  };
+
+  if (e) {
+    // TODO:
+  } else {
+    // denormalized case
+    // its either 1 or 0, so we have to round somehow
+  }
+
+  return 2;
+}
 /*
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
  *   (2.0 raised to the power x) for any 32-bit integer x.
