@@ -402,6 +402,9 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
+  int bias = 127;
+  unsigned invalid = 0x80000000;
+
   // normalizing sign bit to 0
   int n = uf & ~(1 << 31);
 
@@ -415,20 +418,51 @@ int floatFloat2Int(unsigned uf) {
 
   int sign = uf & (1 << 31);
   int e = ((n & e_mask) >> 23);
+  int E = e - bias;
   int m = n & m_mask;
 
+  // NaN and Inf
   if (!(e ^ 0xFF)) {
-    return 0x80000000;
+    return invalid;
   };
 
-  if (e) {
-    // TODO:
-  } else {
-    // denormalized case
-    // its either 1 or 0, so we have to round somehow
+  // if E is negative, we can return 0 immediately because the number is smaller
+  // than 1
+  if (E < 0) {
+    return 0;
+  };
+
+  int res = 0;
+  int idx = 0;
+
+  // we add the leading 1
+  m += 1 << 23;
+
+  while (idx < 24) {
+    // if the bit is set
+    if (m & 1 << (23 - idx)) {
+      // shift amount: E - ith position in the mantissa
+      int k = E - idx;
+
+      if (k > 31) {
+        return invalid;
+      }
+
+      // negative shift means we have a fractured value
+      if (k < 0) {
+        break;
+      }
+
+      res += 1 << k;
+    }
+    idx += 1;
   }
 
-  return 2;
+  if (sign) {
+    res = ~res + 1;
+  }
+
+  return res;
 }
 /*
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
