@@ -181,11 +181,12 @@ int isTmax(int x) {
  */
 int allOddBits(int x) {
   // we build up the mask of 1010 1010 bytes
-  int m = 0xAA;
+  int m, r, y;
+  m = 0xAA;
   m += m << 8;
   m += m << 16;
-  int r = x & m;
-  int y = !(r ^ m);
+  r = x & m;
+  y = !(r ^ m);
   return y;
 }
 /*
@@ -306,11 +307,11 @@ return bits + sign
 
  */
 int howManyBits(int x) {
+  int y, bits, count;
   // normalize number so a negative number can be counted like a positive
   x = x ^ (x >> 31);
 
-  int count = 0;
-  int y, bits;
+  count = 0;
 
   y = !!(x >> 16); // 1 if one of the top 16 bits is set
   bits = y << 4;   // a set bit means we need 16 bits at least
@@ -356,20 +357,22 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
+  int n, e_mask, m_mask, sign, e, m;
+
   // normalizing sign bit to 0
-  int n = uf & ~(1 << 31);
+  n = uf & ~(1 << 31);
 
   if (!n) {
     // uf is 0, we can just return
     return uf;
   }
 
-  int e_mask = 0xFF << 23;
-  int m_mask = ~(0x1FF << 23);
+  e_mask = 0xFF << 23;
+  m_mask = ~(0x1FF << 23);
 
-  int sign = uf & (1 << 31);
-  int e = ((n & e_mask) >> 23);
-  int m = n & m_mask;
+  sign = uf & (1 << 31);
+  e = ((n & e_mask) >> 23);
+  m = n & m_mask;
 
   // return if uf is NaN
   if (!(e ^ 0xFF)) {
@@ -402,24 +405,26 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  int bias = 127;
-  unsigned invalid = 0x80000000;
+  unsigned invalid;
+  int n, e_mask, m_mask, sign, e, E, m, res, idx, k;
+
+  invalid = 0x80000000;
 
   // normalizing sign bit to 0
-  int n = uf & ~(1 << 31);
+  n = uf & ~(1 << 31);
 
   if (!n) {
     // uf is 0, we can just return 0
     return 0;
   }
 
-  int e_mask = 0xFF << 23;
-  int m_mask = ~(0x1FF << 23);
+  e_mask = 0xFF << 23;
+  m_mask = ~(0x1FF << 23);
 
-  int sign = uf & (1 << 31);
-  int e = ((n & e_mask) >> 23);
-  int E = e - bias;
-  int m = n & m_mask;
+  sign = uf & (1 << 31);
+  e = ((n & e_mask) >> 23);
+  E = e - 127;
+  m = n & m_mask;
 
   // NaN and Inf
   if (!(e ^ 0xFF)) {
@@ -432,8 +437,8 @@ int floatFloat2Int(unsigned uf) {
     return 0;
   };
 
-  int res = 0;
-  int idx = 0;
+  res = 0;
+  idx = 0;
 
   // we add the leading 1
   m += 1 << 23;
@@ -442,7 +447,7 @@ int floatFloat2Int(unsigned uf) {
     // if the bit is set
     if (m & 1 << (23 - idx)) {
       // shift amount: E - ith position in the mantissa
-      int k = E - idx;
+      k = E - idx;
 
       if (k > 31) {
         return invalid;
