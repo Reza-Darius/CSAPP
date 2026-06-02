@@ -482,4 +482,38 @@ int floatFloat2Int(unsigned uf) {
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatPower2(int x) { return 2; }
+unsigned floatPower2(int x) {
+  unsigned e;
+  int e_min, bias;
+
+  bias = 127;
+  e_min = 1 - bias;
+  // e represenation for 2.0
+  e = 1 << 7;
+
+  if (x == 0) {
+    // 2.0 to the power of 0 returns 1
+    return (e - 1) << 23;
+  }
+
+  // positive case
+  if (x > 0) {
+    // check for overflow
+    if (x - 1 >= e) {
+      return 0xFF << 23;
+    }
+    e += x - 1;
+    return e << 23;
+
+  // negative case
+  } else {
+    if (x < e_min) {
+      // flip to positive
+      x = !x + 1;
+      // we have a min exponent of e_min, we shift whats left over
+      return (1 << 23) >> (x - e_min);
+    }
+    e = bias + x;
+    return e << 23;
+  }
+}
