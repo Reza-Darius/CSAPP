@@ -505,7 +505,7 @@ unsigned floatPower2(int x) {
     e += x - 1;
     return e << 23;
 
-  // negative case
+    // negative case
   } else {
     if (x < e_min) {
       // flip to positive
