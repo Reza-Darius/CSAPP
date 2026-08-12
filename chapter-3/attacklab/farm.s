@@ -1,828 +1,181 @@
-	.file	"farm.c"
-	.text
-	.globl	start_farm
-	.type	start_farm, @function
-start_farm:
-.LFB0:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$1, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE0:
-	.size	start_farm, .-start_farm
-	.globl	getval_142
-	.type	getval_142, @function
-getval_142:
-.LFB1:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$-1869580037, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE1:
-	.size	getval_142, .-getval_142
-	.globl	addval_273
-	.type	addval_273, @function
-addval_273:
-.LFB2:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$1010333368, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE2:
-	.size	addval_273, .-addval_273
-	.globl	addval_219
-	.type	addval_219, @function
-addval_219:
-.LFB3:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$1873251503, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE3:
-	.size	addval_219, .-addval_219
-	.globl	setval_237
-	.type	setval_237, @function
-setval_237:
-.LFB4:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-943224504, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE4:
-	.size	setval_237, .-setval_237
-	.globl	setval_424
-	.type	setval_424, @function
-setval_424:
-.LFB5:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-1839676844, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE5:
-	.size	setval_424, .-setval_424
-	.globl	setval_470
-	.type	setval_470, @function
-setval_470:
-.LFB6:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-947042205, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE6:
-	.size	setval_470, .-setval_470
-	.globl	setval_426
-	.type	setval_426, @function
-setval_426:
-.LFB7:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-1865971384, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE7:
-	.size	setval_426, .-setval_426
-	.globl	getval_280
-	.type	getval_280, @function
-getval_280:
-.LFB8:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$-1013950423, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE8:
-	.size	getval_280, .-getval_280
-	.globl	mid_farm
-	.type	mid_farm, @function
-mid_farm:
-.LFB9:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$1, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE9:
-	.size	mid_farm, .-mid_farm
-	.globl	add_xy
-	.type	add_xy, @function
-add_xy:
-.LFB10:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	%rsi, -16(%rbp)
-	movq	-8(%rbp), %rdx
-	movq	-16(%rbp), %rax
-	addq	%rdx, %rax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE10:
-	.size	add_xy, .-add_xy
-	.globl	getval_481
-	.type	getval_481, @function
-getval_481:
-.LFB11:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$-1866299044, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE11:
-	.size	getval_481, .-getval_481
-	.globl	setval_296
-	.type	setval_296, @function
-setval_296:
-.LFB12:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-1869557351, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE12:
-	.size	setval_296, .-setval_296
-	.globl	addval_113
-	.type	addval_113, @function
-addval_113:
-.LFB13:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$914829687, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE13:
-	.size	addval_113, .-addval_113
-	.globl	addval_490
-	.type	addval_490, @function
-addval_490:
-.LFB14:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$618606195, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE14:
-	.size	addval_490, .-addval_490
-	.globl	getval_226
-	.type	getval_226, @function
-getval_226:
-.LFB15:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$-1068969591, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE15:
-	.size	getval_226, .-getval_226
-	.globl	setval_384
-	.type	setval_384, @function
-setval_384:
-.LFB16:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-1065037439, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE16:
-	.size	setval_384, .-setval_384
-	.globl	addval_190
-	.type	addval_190, @function
-addval_190:
-.LFB17:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$527873983, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE17:
-	.size	addval_190, .-addval_190
-	.globl	setval_276
-	.type	setval_276, @function
-setval_276:
-.LFB18:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-922172792, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE18:
-	.size	setval_276, .-setval_276
-	.globl	addval_436
-	.type	addval_436, @function
-addval_436:
-.LFB19:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$1869558135, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE19:
-	.size	addval_436, .-addval_436
-	.globl	getval_345
-	.type	getval_345, @function
-getval_345:
-.LFB20:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$-1042249400, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE20:
-	.size	getval_345, .-getval_345
-	.globl	addval_479
-	.type	addval_479, @function
-addval_479:
-.LFB21:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$922697079, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE21:
-	.size	addval_479, .-addval_479
-	.globl	addval_187
-	.type	addval_187, @function
-addval_187:
-.LFB22:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$1070018935, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE22:
-	.size	addval_187, .-addval_187
-	.globl	setval_248
-	.type	setval_248, @function
-setval_248:
-.LFB23:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-620179839, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE23:
-	.size	setval_248, .-setval_248
-	.globl	getval_159
-	.type	getval_159, @function
-getval_159:
-.LFB24:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$-919023223, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE24:
-	.size	getval_159, .-getval_159
-	.globl	addval_110
-	.type	addval_110, @function
-addval_110:
-.LFB25:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$1008694840, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE25:
-	.size	addval_110, .-addval_110
-	.globl	addval_487
-	.type	addval_487, @function
-addval_487:
-.LFB26:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$1065041271, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE26:
-	.size	addval_487, .-addval_487
-	.globl	addval_201
-	.type	addval_201, @function
-addval_201:
-.LFB27:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$941586104, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE27:
-	.size	addval_201, .-addval_201
-	.globl	getval_272
-	.type	getval_272, @function
-getval_272:
-.LFB28:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$-771173991, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE28:
-	.size	getval_272, .-getval_272
-	.globl	getval_155
-	.type	getval_155, @function
-getval_155:
-.LFB29:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$-909852023, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE29:
-	.size	getval_155, .-getval_155
-	.globl	setval_299
-	.type	setval_299, @function
-setval_299:
-.LFB30:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-1847555768, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE30:
-	.size	setval_299, .-setval_299
-	.globl	addval_404
-	.type	addval_404, @function
-addval_404:
-.LFB31:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$1013789047, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE31:
-	.size	addval_404, .-addval_404
-	.globl	getval_311
-	.type	getval_311, @function
-getval_311:
-.LFB32:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$-620179063, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE32:
-	.size	getval_311, .-getval_311
-	.globl	setval_167
-	.type	setval_167, @function
-setval_167:
-.LFB33:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-1013853815, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE33:
-	.size	setval_167, .-setval_167
-	.globl	setval_328
-	.type	setval_328, @function
-setval_328:
-.LFB34:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-768032127, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE34:
-	.size	setval_328, .-setval_328
-	.globl	setval_450
-	.type	setval_450, @function
-setval_450:
-.LFB35:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-922169847, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE35:
-	.size	setval_450, .-setval_450
-	.globl	addval_358
-	.type	addval_358, @function
-addval_358:
-.LFB36:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$1864333048, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE36:
-	.size	addval_358, .-addval_358
-	.globl	addval_124
-	.type	addval_124, @function
-addval_124:
-.LFB37:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	addl	$1019724425, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE37:
-	.size	addval_124, .-addval_124
-	.globl	getval_169
-	.type	getval_169, @function
-getval_169:
-.LFB38:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$-1071591800, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE38:
-	.size	getval_169, .-getval_169
-	.globl	setval_181
-	.type	setval_181, @function
-setval_181:
-.LFB39:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-1025472184, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE39:
-	.size	setval_181, .-setval_181
-	.globl	addval_184
-	.type	addval_184, @function
-addval_184:
-.LFB40:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	%edi, -4(%rbp)
-	movl	-4(%rbp), %eax
-	subl	$765410679, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE40:
-	.size	addval_184, .-addval_184
-	.globl	getval_472
-	.type	getval_472, @function
-getval_472:
-.LFB41:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$-769601907, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE41:
-	.size	getval_472, .-getval_472
-	.globl	setval_350
-	.type	setval_350, @function
-setval_350:
-.LFB42:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rax
-	movl	$-1864332984, (%rax)
-	nop
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE42:
-	.size	setval_350, .-setval_350
-	.globl	end_farm
-	.type	end_farm, @function
-end_farm:
-.LFB43:
-	.cfi_startproc
-	pushq	%rbp
-	.cfi_def_cfa_offset 16
-	.cfi_offset 6, -16
-	movq	%rsp, %rbp
-	.cfi_def_cfa_register 6
-	movl	$1, %eax
-	popq	%rbp
-	.cfi_def_cfa 7, 8
-	ret
-	.cfi_endproc
-.LFE43:
-	.size	end_farm, .-end_farm
-	.ident	"GCC: (GNU) 16.1.1 20260625"
-	.section	.note.GNU-stack,"",@progbits
+
+farm.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 <start_farm>:
+   0:	b8 01 00 00 00       	mov    $0x1,%eax
+   5:	c3                   	ret
+
+0000000000000006 <getval_142>:
+   6:	b8 fb 78 90 90       	mov    $0x909078fb,%eax
+   b:	c3                   	ret
+
+000000000000000c <addval_273>:
+   c:	8d 87 48 89 c7 c3    	lea    -0x3c3876b8(%rdi),%eax
+  12:	c3                   	ret
+
+0000000000000013 <addval_219>:
+  13:	8d 87 51 73 58 90    	lea    -0x6fa78caf(%rdi),%eax
+  19:	c3                   	ret
+
+000000000000001a <setval_237>:
+  1a:	c7 07 48 89 c7 c7    	movl   $0xc7c78948,(%rdi)
+  20:	c3                   	ret
+
+0000000000000021 <setval_424>:
+  21:	c7 07 54 c2 58 92    	movl   $0x9258c254,(%rdi)
+  27:	c3                   	ret
+
+0000000000000028 <setval_470>:
+  28:	c7 07 63 48 8d c7    	movl   $0xc78d4863,(%rdi)
+  2e:	c3                   	ret
+
+000000000000002f <setval_426>:
+  2f:	c7 07 48 89 c7 90    	movl   $0x90c78948,(%rdi)
+  35:	c3                   	ret
+
+0000000000000036 <getval_280>:
+  36:	b8 29 58 90 c3       	mov    $0xc3905829,%eax
+  3b:	c3                   	ret
+
+000000000000003c <mid_farm>:
+  3c:	b8 01 00 00 00       	mov    $0x1,%eax
+  41:	c3                   	ret
+
+0000000000000042 <add_xy>:
+  42:	48 8d 04 37          	lea    (%rdi,%rsi,1),%rax
+  46:	c3                   	ret
+
+0000000000000047 <getval_481>:
+  47:	b8 5c 89 c2 90       	mov    $0x90c2895c,%eax
+  4c:	c3                   	ret
+
+000000000000004d <setval_296>:
+  4d:	c7 07 99 d1 90 90    	movl   $0x9090d199,(%rdi)
+  53:	c3                   	ret
+
+0000000000000054 <addval_113>:
+  54:	8d 87 89 ce 78 c9    	lea    -0x36873177(%rdi),%eax
+  5a:	c3                   	ret
+
+000000000000005b <addval_490>:
+  5b:	8d 87 8d d1 20 db    	lea    -0x24df2e73(%rdi),%eax
+  61:	c3                   	ret
+
+0000000000000062 <getval_226>:
+  62:	b8 89 d1 48 c0       	mov    $0xc048d189,%eax
+  67:	c3                   	ret
+
+0000000000000068 <setval_384>:
+  68:	c7 07 81 d1 84 c0    	movl   $0xc084d181,(%rdi)
+  6e:	c3                   	ret
+
+000000000000006f <addval_190>:
+  6f:	8d 87 41 48 89 e0    	lea    -0x1f76b7bf(%rdi),%eax
+  75:	c3                   	ret
+
+0000000000000076 <setval_276>:
+  76:	c7 07 88 c2 08 c9    	movl   $0xc908c288,(%rdi)
+  7c:	c3                   	ret
+
+000000000000007d <addval_436>:
+  7d:	8d 87 89 ce 90 90    	lea    -0x6f6f3177(%rdi),%eax
+  83:	c3                   	ret
+
+0000000000000084 <getval_345>:
+  84:	b8 48 89 e0 c1       	mov    $0xc1e08948,%eax
+  89:	c3                   	ret
+
+000000000000008a <addval_479>:
+  8a:	8d 87 89 c2 00 c9    	lea    -0x36ff3d77(%rdi),%eax
+  90:	c3                   	ret
+
+0000000000000091 <addval_187>:
+  91:	8d 87 89 ce 38 c0    	lea    -0x3fc73177(%rdi),%eax
+  97:	c3                   	ret
+
+0000000000000098 <setval_248>:
+  98:	c7 07 81 ce 08 db    	movl   $0xdb08ce81,(%rdi)
+  9e:	c3                   	ret
+
+000000000000009f <getval_159>:
+  9f:	b8 89 d1 38 c9       	mov    $0xc938d189,%eax
+  a4:	c3                   	ret
+
+00000000000000a5 <addval_110>:
+  a5:	8d 87 c8 89 e0 c3    	lea    -0x3c1f7638(%rdi),%eax
+  ab:	c3                   	ret
+
+00000000000000ac <addval_487>:
+  ac:	8d 87 89 c2 84 c0    	lea    -0x3f7b3d77(%rdi),%eax
+  b2:	c3                   	ret
+
+00000000000000b3 <addval_201>:
+  b3:	8d 87 48 89 e0 c7    	lea    -0x381f76b8(%rdi),%eax
+  b9:	c3                   	ret
+
+00000000000000ba <getval_272>:
+  ba:	b8 99 d1 08 d2       	mov    $0xd208d199,%eax
+  bf:	c3                   	ret
+
+00000000000000c0 <getval_155>:
+  c0:	b8 89 c2 c4 c9       	mov    $0xc9c4c289,%eax
+  c5:	c3                   	ret
+
+00000000000000c6 <setval_299>:
+  c6:	c7 07 48 89 e0 91    	movl   $0x91e08948,(%rdi)
+  cc:	c3                   	ret
+
+00000000000000cd <addval_404>:
+  cd:	8d 87 89 ce 92 c3    	lea    -0x3c6d3177(%rdi),%eax
+  d3:	c3                   	ret
+
+00000000000000d4 <getval_311>:
+  d4:	b8 89 d1 08 db       	mov    $0xdb08d189,%eax
+  d9:	c3                   	ret
+
+00000000000000da <setval_167>:
+  da:	c7 07 89 d1 91 c3    	movl   $0xc391d189,(%rdi)
+  e0:	c3                   	ret
+
+00000000000000e1 <setval_328>:
+  e1:	c7 07 81 c2 38 d2    	movl   $0xd238c281,(%rdi)
+  e7:	c3                   	ret
+
+00000000000000e8 <setval_450>:
+  e8:	c7 07 09 ce 08 c9    	movl   $0xc908ce09,(%rdi)
+  ee:	c3                   	ret
+
+00000000000000ef <addval_358>:
+  ef:	8d 87 08 89 e0 90    	lea    -0x6f1f76f8(%rdi),%eax
+  f5:	c3                   	ret
+
+00000000000000f6 <addval_124>:
+  f6:	8d 87 89 c2 c7 3c    	lea    0x3cc7c289(%rdi),%eax
+  fc:	c3                   	ret
+
+00000000000000fd <getval_169>:
+  fd:	b8 88 ce 20 c0       	mov    $0xc020ce88,%eax
+ 102:	c3                   	ret
+
+0000000000000103 <setval_181>:
+ 103:	c7 07 48 89 e0 c2    	movl   $0xc2e08948,(%rdi)
+ 109:	c3                   	ret
+
+000000000000010a <addval_184>:
+ 10a:	8d 87 89 c2 60 d2    	lea    -0x2d9f3d77(%rdi),%eax
+ 110:	c3                   	ret
+
+0000000000000111 <getval_472>:
+ 111:	b8 8d ce 20 d2       	mov    $0xd220ce8d,%eax
+ 116:	c3                   	ret
+
+0000000000000117 <setval_350>:
+ 117:	c7 07 48 89 e0 90    	movl   $0x90e08948,(%rdi)
+ 11d:	c3                   	ret
+
+000000000000011e <end_farm>:
+ 11e:	b8 01 00 00 00       	mov    $0x1,%eax
+ 123:	c3                   	ret

