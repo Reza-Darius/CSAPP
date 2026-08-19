@@ -340,10 +340,10 @@ void do_bgfg(char **argv) {
     app_error("cant find requested job");
   }
 
-  if (job->state != ST) {
-    printf("job is not in a stopped state\n");
-    return;
-  }
+  // if (job->state != ST) {
+  //   printf("job is not in a stopped state\n");
+  //   return;
+  // }
 
   if (strcmp(argv[0], "bg") == 0) {
     job->state = BG;
