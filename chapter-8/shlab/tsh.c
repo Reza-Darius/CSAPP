@@ -328,8 +328,10 @@ void waitfg(pid_t pid) {
   // job might be null in case the child got reaped before the getjobpid() call
   struct job_t *job = getjobpid(jobs, pid);
 
-  while (job && job->state == FG)
+  while (job && job->state == FG) {
     sleep(1);
+    // job = getjobpid(jobs, pid);
+  }
 
   if (verbose) {
     printf("waitfg: fg process done: [%d] (%d)\n", job->jid, pid);
@@ -354,7 +356,8 @@ void sigchld_handler(int sig) {
   };
 
   int saved_errno = errno;
-  int c_pid, status, jobid;
+  int c_pid, status;
+  struct job_t *job;
   sigset_t mask, prev;
 
   if (sigfillset(&mask))
@@ -369,7 +372,7 @@ void sigchld_handler(int sig) {
   // we use waitpid() instead of wait() because there might be children
   // we dont want to reap yet, wait() would block on running bg jobs
   while ((c_pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0) {
-    jobid = pid2jid(c_pid);
+    job = getjobpid(jobs, c_pid);
 
     if (WIFEXITED(status)) {
       // asserting that a reaped child was part of the job list
@@ -378,24 +381,35 @@ void sigchld_handler(int sig) {
             "sigchld_handler: reaped child couldnt be deleted from job list");
       } else {
         if (verbose) {
-          printf("sigchld_handler: Job [%d] (%d) deleted\n", jobid, c_pid);
+          printf("sigchld_handler: Job [%d] (%d) deleted\n", job->jid, c_pid);
         }
       };
       if (verbose) {
-        printf("sigchld_handler: Job [%d] (%d) terminated, status %d\n", jobid,
-               c_pid, WEXITSTATUS(status));
+        printf("sigchld_handler: Job [%d] (%d) terminated, status %d\n",
+               job->jid, c_pid, WEXITSTATUS(status));
       };
       continue;
     }
 
     if (WIFSTOPPED(status)) {
-      printf("Job [%d] (%d) stopped by signal %d\n", jobid, c_pid,
+      job->state = ST;
+      printf("Job [%d] (%d) stopped by signal %d\n", job->jid, c_pid,
              WSTOPSIG(status));
       continue;
     }
 
     if (WIFSIGNALED(status)) {
-      printf("Job [%d] (%d) terminated by signal %d\n", jobid, c_pid,
+      // asserting that a reaped child was part of the job list
+      if (deletejob(jobs, c_pid) == 0) {
+        app_error(
+            "sigchld_handler: reaped child couldnt be deleted from job list");
+      } else {
+        if (verbose) {
+          printf("sigchld_handler: Job [%d] (%d) deleted\n", job->jid, c_pid);
+        }
+      };
+
+      printf("Job [%d] (%d) terminated by signal %d\n", job->jid, c_pid,
              WTERMSIG(status));
       continue;
     }
@@ -465,7 +479,7 @@ void sigtstp_handler(int sig) {
     // there is a potential race here in which the child gets cleaned up before
     // we send the signal, in which case kill returns ESRCH, which is an
     // acceptable state and can be ignored
-    if (kill(-fg_pid, SIGSTOP) < 0 && errno != ESRCH) {
+    if (kill(-fg_pid, SIGTSTP) < 0 && errno != ESRCH) {
       unix_error("sigint handler kill");
     }
   }
