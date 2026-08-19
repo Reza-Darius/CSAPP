@@ -145,6 +145,9 @@ int main(int argc, char **argv) {
 
     /* Evaluate the command line */
     eval(cmdline);
+    if (verbose) {
+      printf("eval: exiting\n");
+    }
     fflush(stdout);
     fflush(stdout);
   }
@@ -180,10 +183,16 @@ void eval(char *cmdline) {
 
   // no command provided
   if (!argv[0]) {
+    if (verbose) {
+      printf("eval: no command found\n");
+    }
     return;
   }
 
   if (builtin_cmd(argv)) {
+    if (verbose) {
+      printf("do_bgfg: exiting\n");
+    };
     return;
   }
 
@@ -210,8 +219,13 @@ void eval(char *cmdline) {
     if (setpgid(0, 0) < 0)
       unix_error("setpgid child");
 
-    if (execve(argv[0], argv, environ) < 0)
+    if (execve(argv[0], argv, environ) < 0) {
+      if (errno == ENOENT) {
+        printf("%s: Command not found\n", argv[0]);
+        exit(1);
+      }
       unix_error("execv");
+    }
   }
 
   if (addjob(jobs, child_pid, job_type, cmdline) != 1) {
@@ -226,14 +240,8 @@ void eval(char *cmdline) {
   if (sigprocmask(SIG_SETMASK, &prev, NULL))
     unix_error("sigprocmask unblock after fork");
 
-  if (job_type == FG) {
-    waitfg(child_pid);
-  } else {
-    printf("[%d] (%d) %s", job->jid, job->pid, job->cmdline);
-  }
-  if (verbose) {
-    printf("eval: exiting\n");
-  }
+  waitfg(child_pid);
+
   return;
 }
 
@@ -306,11 +314,20 @@ int builtin_cmd(char **argv) {
     return 1;
   }
   if (strcmp(argv[0], "bg") == 0) {
+    if (!argv[1]) {
+      printf("bg command requires PID or %%jobid argument\n");
+      return 1;
+    }
     do_bgfg(argv);
     return 1;
   }
   if (strcmp(argv[0], "fg") == 0) {
+    if (!argv[1]) {
+      printf("fg command requires PID or %%jobid argument\n");
+      return 1;
+    }
     do_bgfg(argv);
+
     return 1;
   }
   return 0; /* not a builtin command */
@@ -325,46 +342,85 @@ void do_bgfg(char **argv) {
   }
 
   struct job_t *job;
-
-  if (!argv[1]) {
-    app_error("please provide a pid or jid for bg/fg");
-  }
+  int id;
+  char *check;
 
   if (argv[1][0] == '%') {
-    job = getjobjid(jobs, atoi(++argv[1]));
+    // get a jid
+    char *num_ptr = argv[1] + 1;
+    id = strtol(num_ptr, &check, 10);
+
+    if (check == argv[1]) {
+      if (strcmp(argv[0], "bg") == 0) {
+        printf("bg: argument must be a PID or %%jobid\n");
+      } else {
+        printf("fg: argument must be a PID or %%jobid\n");
+      };
+      return;
+    }
+
+    job = getjobjid(jobs, id);
   } else {
-    job = getjobpid(jobs, atoi(argv[1]));
+    // get a pid
+    id = strtol(argv[1], &check, 10);
+
+    if (check == argv[1]) {
+      if (strcmp(argv[0], "bg") == 0) {
+        printf("bg: argument must be a PID or %%jobid\n");
+      } else {
+        printf("fg: argument must be a PID or %%jobid\n");
+      };
+      return;
+    }
+
+    job = getjobpid(jobs, id);
   };
 
   if (!job) {
-    app_error("cant find requested job");
-  }
-
-  // if (job->state != ST) {
-  //   printf("job is not in a stopped state\n");
-  //   return;
-  // }
-
-  if (strcmp(argv[0], "bg") == 0) {
-    job->state = BG;
-  } else {
-    job->state = FG;
-  };
-
-  if (kill(job->pid, SIGCONT) < 0) {
-    unix_error("do_bgfg handler kill");
-  }
-  if (verbose) {
-    printf("do_bgfg: sent signal\n");
+    if (argv[1][0] == '%') {
+      printf("%s: No such job\n", argv[1]);
+    } else {
+      printf("(%s): No such process\n", argv[1]);
+    }
+    return;
   }
 
   if (job->state == FG) {
-    waitfg(job->pid);
+    printf("bad transition, job already FG\n");
+    app_error("bad transition");
+  };
+
+  // asserting state transitioning invariants
+  if (strcmp(argv[0], "bg") == 0) {
+    if (job->state == ST) {
+      if (verbose)
+        printf("do_bgfg: transitioned [%d] (%d) to BG\n", job->jid, job->pid);
+      job->state = BG;
+    } else {
+      printf("waitfg: bad transiton for [%d] (%d), can only go from ST to bg\n",
+             job->jid, job->pid);
+      app_error("bad transition");
+    };
+  } else {
+    if (job->state == ST || job->state == BG) {
+      if (verbose)
+        printf("do_bgfg: transitioned [%d] (%d) to FG\n", job->jid, job->pid);
+      job->state = FG;
+    } else {
+      printf("waitfg: bad transiton for [%d] (%d), can only go from ST or BG "
+             "to FG\n",
+             job->jid, job->pid);
+      app_error("bad transition");
+    };
+  };
+
+  // send the signal and wait
+  if (kill(-job->pid, SIGCONT) < 0) {
+    unix_error("do_bgfg handler kill");
   }
 
-  if (verbose) {
-    printf("do_bgfg: exiting\n");
-  }
+  waitfg(job->pid);
+
   return;
 }
 
@@ -374,14 +430,24 @@ void do_bgfg(char **argv) {
 void waitfg(pid_t pid) {
   // job might be null in case the child got reaped before the getjobpid() call
   struct job_t *job = getjobpid(jobs, pid);
+  int jid = job->jid;
+
+  // we only wait for FG jobs
+  if (job->state == BG) {
+    printf("[%d] (%d) %s", jid, pid, job->cmdline);
+    return;
+  };
 
   while (job && job->state == FG) {
+    if (verbose) {
+      printf("waitfg: watiting for [%d] (%d)\n", jid, pid);
+    }
     sleep(1);
     // job = getjobpid(jobs, pid);
   }
 
   if (verbose) {
-    printf("waitfg: fg process done: [%d] (%d)\n", job->jid, pid);
+    printf("waitfg: [%d] (%d) is no longer fg\n", jid, pid);
   }
   return;
 }
@@ -403,7 +469,7 @@ void sigchld_handler(int sig) {
   };
 
   int saved_errno = errno;
-  int c_pid, status;
+  int c_pid, status, jid;
   struct job_t *job;
   sigset_t mask, prev;
 
@@ -420,6 +486,7 @@ void sigchld_handler(int sig) {
   // we dont want to reap yet, wait() would block on running bg jobs
   while ((c_pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0) {
     job = getjobpid(jobs, c_pid);
+    jid = job->jid;
 
     if (WIFEXITED(status)) {
       // asserting that a reaped child was part of the job list
@@ -428,19 +495,19 @@ void sigchld_handler(int sig) {
             "sigchld_handler: reaped child couldnt be deleted from job list");
       } else {
         if (verbose) {
-          printf("sigchld_handler: Job [%d] (%d) deleted\n", job->jid, c_pid);
+          printf("sigchld_handler: Job [%d] (%d) deleted\n", jid, c_pid);
         }
       };
       if (verbose) {
-        printf("sigchld_handler: Job [%d] (%d) terminated, status %d\n",
-               job->jid, c_pid, WEXITSTATUS(status));
+        printf("sigchld_handler: Job [%d] (%d) terminated, status %d\n", jid,
+               c_pid, WEXITSTATUS(status));
       };
       continue;
     }
 
     if (WIFSTOPPED(status)) {
       job->state = ST;
-      printf("Job [%d] (%d) stopped by signal %d\n", job->jid, c_pid,
+      printf("Job [%d] (%d) stopped by signal %d\n", jid, c_pid,
              WSTOPSIG(status));
       continue;
     }
@@ -452,11 +519,11 @@ void sigchld_handler(int sig) {
             "sigchld_handler: reaped child couldnt be deleted from job list");
       } else {
         if (verbose) {
-          printf("sigchld_handler: Job [%d] (%d) deleted\n", job->jid, c_pid);
+          printf("sigchld_handler: Job [%d] (%d) deleted\n", jid, c_pid);
         }
       };
 
-      printf("Job [%d] (%d) terminated by signal %d\n", job->jid, c_pid,
+      printf("Job [%d] (%d) terminated by signal %d\n", jid, c_pid,
              WTERMSIG(status));
       continue;
     }
@@ -497,6 +564,13 @@ void sigint_handler(int sig) {
     if (kill(-fg_pid, SIGINT) < 0 && errno != ESRCH) {
       unix_error("sigint handler kill");
     }
+    if (verbose) {
+      if (errno == ESRCH) {
+        printf("sgint_handler: couldnt find pid: %d\n", fg_pid);
+      } else {
+        printf("signint_handler: sent SIGINT to pid: %d\n", fg_pid);
+      };
+    }
   }
 
   errno = saved_errno;
@@ -513,7 +587,7 @@ void sigint_handler(int sig) {
  */
 void sigtstp_handler(int sig) {
   if (verbose) {
-    printf("sigstp_handler: entering\n");
+    printf("sigtstp_handler: entering\n");
   };
 
   int fg_pid;
@@ -529,11 +603,18 @@ void sigtstp_handler(int sig) {
     if (kill(-fg_pid, SIGTSTP) < 0 && errno != ESRCH) {
       unix_error("sigint handler kill");
     }
+    if (verbose) {
+      if (errno == ESRCH) {
+        printf("sigtstp_handler: couldnt find pid: %d\n", fg_pid);
+      } else {
+        printf("sigtstp_handler: sent SIGTSTP to pid: %d\n", fg_pid);
+      };
+    }
   }
   errno = saved_errno;
 
   if (verbose) {
-    printf("sigstp_handler: exiting\n");
+    printf("sigtstp_handler: exiting\n");
   };
   return;
 }
