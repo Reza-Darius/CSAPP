@@ -319,7 +319,54 @@ int builtin_cmd(char **argv) {
 /*
  * do_bgfg - Execute the builtin bg and fg commands
  */
-void do_bgfg(char **argv) { return; }
+void do_bgfg(char **argv) {
+  if (verbose) {
+    printf("do_bgfg: entering\n");
+  }
+
+  struct job_t *job;
+
+  if (!argv[1]) {
+    app_error("please provide a pid or jid for bg/fg");
+  }
+
+  if (argv[1][0] == '%') {
+    job = getjobjid(jobs, atoi(++argv[1]));
+  } else {
+    job = getjobpid(jobs, atoi(argv[1]));
+  };
+
+  if (!job) {
+    app_error("cant find requested job");
+  }
+
+  if (job->state != ST) {
+    printf("job is not in a stopped state\n");
+    return;
+  }
+
+  if (strcmp(argv[0], "bg") == 0) {
+    job->state = BG;
+  } else {
+    job->state = FG;
+  };
+
+  if (kill(job->pid, SIGCONT) < 0) {
+    unix_error("do_bgfg handler kill");
+  }
+  if (verbose) {
+    printf("do_bgfg: sent signal\n");
+  }
+
+  if (job->state == FG) {
+    waitfg(job->pid);
+  }
+
+  if (verbose) {
+    printf("do_bgfg: exiting\n");
+  }
+  return;
+}
 
 /*
  * waitfg - Block until process pid is no longer the foreground process
