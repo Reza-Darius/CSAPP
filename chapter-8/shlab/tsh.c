@@ -173,7 +173,6 @@ void eval(char *cmdline) {
   char *argv[MAXARGS] = {0};
   int job_type, child_pid;
   sigset_t mask, prev;
-  struct job_t *job;
 
   if (parseline(cmdline, argv)) {
     job_type = BG;
@@ -232,9 +231,6 @@ void eval(char *cmdline) {
     app_error("couldnt add fg job");
     return;
   };
-
-  if ((job = getjobpid(jobs, child_pid)) == NULL)
-    app_error("couldnt get job after adding it");
 
   // unblock sigchild and wait
   if (sigprocmask(SIG_SETMASK, &prev, NULL))
@@ -342,13 +338,24 @@ void do_bgfg(char **argv) {
   }
 
   struct job_t *job;
-  int id;
+  sigset_t mask, prev;
+  int jid;
+  pid_t pid;
   char *check;
+
+  // if (sigemptyset(&mask))
+  //   unix_error("sigemptyset");
+  // if (sigaddset(&mask, SIGCHLD))
+  //   unix_error("sigaddset");
+  //
+  // // we need to block SIGCHLD so we can atomically perform
+  // // the job state change
+  // if (sigprocmask(SIG_BLOCK, &mask, &prev))
+  //   unix_error("sigprocmask block before fork");
 
   if (argv[1][0] == '%') {
     // get a jid
-    char *num_ptr = argv[1] + 1;
-    id = strtol(num_ptr, &check, 10);
+    jid = strtol(argv[1] + 1, &check, 10);
 
     if (check == argv[1]) {
       if (strcmp(argv[0], "bg") == 0) {
@@ -359,10 +366,10 @@ void do_bgfg(char **argv) {
       return;
     }
 
-    job = getjobjid(jobs, id);
+    job = getjobjid(jobs, jid);
   } else {
     // get a pid
-    id = strtol(argv[1], &check, 10);
+    pid = strtol(argv[1], &check, 10);
 
     if (check == argv[1]) {
       if (strcmp(argv[0], "bg") == 0) {
@@ -373,9 +380,10 @@ void do_bgfg(char **argv) {
       return;
     }
 
-    job = getjobpid(jobs, id);
+    job = getjobpid(jobs, pid);
   };
 
+  // job might have gotten cleaned up in the meantime
   if (!job) {
     if (argv[1][0] == '%') {
       printf("%s: No such job\n", argv[1]);
@@ -415,9 +423,13 @@ void do_bgfg(char **argv) {
   };
 
   // send the signal and wait
-  if (kill(-job->pid, SIGCONT) < 0) {
+  if (kill(-job->pid, SIGCONT) < 0 && errno != ESRCH) {
     unix_error("do_bgfg handler kill");
   }
+
+  // // unblock SIGCHLD
+  // if (sigprocmask(SIG_SETMASK, &prev, NULL))
+  //   unix_error("sigprocmask block before fork");
 
   waitfg(job->pid);
 
@@ -428,8 +440,13 @@ void do_bgfg(char **argv) {
  * waitfg - Block until process pid is no longer the foreground process
  */
 void waitfg(pid_t pid) {
-  // job might be null in case the child got reaped before the getjobpid() call
   struct job_t *job = getjobpid(jobs, pid);
+
+  // job might be null in case the child got reaped before the getjobpid() call
+  if (!job) {
+    return;
+  }
+
   int jid = job->jid;
 
   // we only wait for FG jobs
@@ -438,12 +455,11 @@ void waitfg(pid_t pid) {
     return;
   };
 
-  while (job && job->state == FG) {
+  while (job->state == FG) {
     if (verbose) {
       printf("waitfg: watiting for [%d] (%d)\n", jid, pid);
     }
     sleep(1);
-    // job = getjobpid(jobs, pid);
   }
 
   if (verbose) {
@@ -471,16 +487,10 @@ void sigchld_handler(int sig) {
   int saved_errno = errno;
   int c_pid, status, jid;
   struct job_t *job;
-  sigset_t mask, prev;
 
-  if (sigfillset(&mask))
-    unix_error("sigfillset sigchld handler");
-
-  if (sigprocmask(SIG_BLOCK, &mask, &prev))
-    unix_error("sigprocmask block before fork");
-
-  // do we need to block signals here? no because sigint causes
-  // the children to exit which means this handler runs after
+  // we dont need to block signals here because a SIGINT or SIGTSTP
+  // might interupt us here, but they dont change any state in the shell
+  // SIGCHLD itself is implicitly blocked
 
   // we use waitpid() instead of wait() because there might be children
   // we dont want to reap yet, wait() would block on running bg jobs
@@ -488,7 +498,8 @@ void sigchld_handler(int sig) {
     job = getjobpid(jobs, c_pid);
     jid = job->jid;
 
-    if (WIFEXITED(status)) {
+    // delete job from list
+    if (WIFEXITED(status) || WIFSIGNALED(status)) {
       // asserting that a reaped child was part of the job list
       if (deletejob(jobs, c_pid) == 0) {
         app_error(
@@ -498,10 +509,19 @@ void sigchld_handler(int sig) {
           printf("sigchld_handler: Job [%d] (%d) deleted\n", jid, c_pid);
         }
       };
+    }
+
+    if (WIFEXITED(status)) {
       if (verbose) {
         printf("sigchld_handler: Job [%d] (%d) terminated, status %d\n", jid,
                c_pid, WEXITSTATUS(status));
       };
+      continue;
+    }
+
+    if (WIFSIGNALED(status)) {
+      printf("Job [%d] (%d) terminated by signal %d\n", jid, c_pid,
+             WTERMSIG(status));
       continue;
     }
 
@@ -511,22 +531,6 @@ void sigchld_handler(int sig) {
              WSTOPSIG(status));
       continue;
     }
-
-    if (WIFSIGNALED(status)) {
-      // asserting that a reaped child was part of the job list
-      if (deletejob(jobs, c_pid) == 0) {
-        app_error(
-            "sigchld_handler: reaped child couldnt be deleted from job list");
-      } else {
-        if (verbose) {
-          printf("sigchld_handler: Job [%d] (%d) deleted\n", jid, c_pid);
-        }
-      };
-
-      printf("Job [%d] (%d) terminated by signal %d\n", jid, c_pid,
-             WTERMSIG(status));
-      continue;
-    }
   }
 
   // check for error that isnt "we have no children"
@@ -534,12 +538,10 @@ void sigchld_handler(int sig) {
     unix_error("sigchild handler error\n");
 
   errno = saved_errno;
-  if (sigprocmask(SIG_SETMASK, &prev, NULL))
-    unix_error("sigprocmask block before fork");
 
-  if (verbose) {
+  if (verbose)
     printf("sigchld_handler: exiting\n");
-  };
+  ;
   return;
 }
 
@@ -592,7 +594,6 @@ void sigtstp_handler(int sig) {
 
   int fg_pid;
   int saved_errno = errno;
-  // do we need to block in case of sigchild or sigint?
 
   // sending SIGSTOP to foreground process group
   // this block might not run if sigchild ran in the meantime
