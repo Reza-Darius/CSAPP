@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
   struct stat file_stats;
 
   if (argc < 2) {
-    err(EXIT_FAILURE, "please provide an argumen\n");
+    err(EXIT_FAILURE, "please provide a path to a file");
   }
 
   if ((fd = open(argv[1], O_RDONLY)) < 0) {
