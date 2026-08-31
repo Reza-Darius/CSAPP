@@ -48,8 +48,10 @@ team_t team = {
 #define WSIZE 4             /* Word and header/footer size (bytes) */
 #define DSIZE 8             /* Double word size (bytes) */
 #define CHUNKSIZE (1 << 12) /* Extend heap by this amount (bytes) */
+#define BLOCK_MIN_SIZE (2 * WSIZE)
 
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
 
 /* Pack a size and allocated bit into a word */
 #define PACK(size, prv_free, alloc) ((size) | (alloc) | (prv_free << 1))
@@ -88,7 +90,7 @@ team_t team = {
 
 /* Block size needed for a request, the request size plus size for hdr and
  * footer rounded to alignment*/
-#define BLOCK_SIZE(req_size) (ALIGN(req_size + (WSIZE * 2)))
+#define BLOCK_SIZE(req_size) (ALIGN(req_size + WSIZE))
 /* Checks if the block is the epilogue block */
 #define IS_END(bp) (GET_SIZE(HDRP(bp)) == 0 && GET_ALLOC(HDRP(bp)) == 1 ? 1 : 0)
 
@@ -170,9 +172,9 @@ void *coalesce(void *bp) {
 
   // coalesce with next block if possible
   if (next_free) {
-    #ifdef DEBUG
+#ifdef DEBUG
     printf("coalesced with next\n");
-    #endif
+#endif
     // add sizes together, and write new values
     new_size = GET_SIZE(HDRP(bp)) + GET_SIZE(HDRP(nxt_bl));
     PUT(HDRP(bp), PACK(new_size, prev_free, 0));
@@ -181,9 +183,9 @@ void *coalesce(void *bp) {
 
   // coalesce with previous block if possible
   if (prev_free) {
-    #ifdef DEBUG
+#ifdef DEBUG
     printf("coalesced with prev\n");
-    #endif
+#endif
     prev_bl = PREV_BLKP(bp);
 
     // invariant: we cant ever have two free blocks adjacent
@@ -210,9 +212,9 @@ void *find_free_block(void *bp, size_t req_size) {
 
   while (!IS_END(bp) && (char *)bp < heap_end) {
     if (!GET_ALLOC(HDRP(bp)) && GET_SIZE(HDRP(bp)) >= req_size) {
-      #ifdef DEBUG
+#ifdef DEBUG
       printf("found block at: %p for req_size: %zu\n", bp, req_size);
-      #endif
+#endif
       return bp;
     }
     bp = NEXT_BLKP(bp);
@@ -233,18 +235,21 @@ void *split(void *bp, size_t split_n) {
     return NULL;
   }
 
-  // we cant split off more than the block has
-  if (old_size < split_n) {
-    return NULL;
-  };
-
-  if (old_size == split_n) {
+  if (old_size == split_n)
     return bp;
-  }
 
-  if ((old_size - split_n) < 2 * WSIZE) {
+  // we cant carve off less than minimum block size
+  if (split_n < BLOCK_MIN_SIZE)
     return NULL;
-  };
+
+  // we cant carve off more than the block has
+  if (old_size < split_n)
+    return NULL;
+
+  // the remaining block cant be smaller than min_block_size
+  if ((old_size - split_n) < BLOCK_MIN_SIZE)
+    return NULL;
+  ;
 
   // update old header
   SET_SIZE(HDRP(bp), old_size - split_n);
@@ -258,6 +263,7 @@ void *split(void *bp, size_t split_n) {
   split_block = (char *)bp + (old_size - split_n);
   PUT(HDRP(split_block), PACK(split_n, 0, 0));
   PUT(FTRP(split_block), PACK(split_n, 0, 0));
+  SET_PREV_FREE(HDRP(NEXT_BLKP(split_block)), 1);
 
   return split_block;
 };
@@ -267,9 +273,9 @@ void *split(void *bp, size_t split_n) {
  *     Always allocate a block whose size is a multiple of the alignment.
  */
 void *mm_malloc(size_t req_size) {
-  #ifdef DEBUG
+#ifdef DEBUG
   printf("malloc called: %zu\n", req_size);
-  #endif //DEBUG
+#endif // DEBUG
   void *block;
   size_t block_size;
 
@@ -277,8 +283,8 @@ void *mm_malloc(size_t req_size) {
     return NULL;
   }
 
-  if (req_size < 2 * DSIZE) {
-    req_size = 2 * DSIZE;
+  if (req_size < BLOCK_MIN_SIZE) {
+    req_size = BLOCK_MIN_SIZE;
   }
 
   block_size = BLOCK_SIZE(req_size);
@@ -292,9 +298,10 @@ void *mm_malloc(size_t req_size) {
   }
 
   if (GET_SIZE(HDRP(block)) > block_size) {
-    #ifdef DEBUG
-    printf("splitting: block size: %uz, req size: %zuz\n", GET_SIZE(HDRP(block)), block_size);
-    #endif
+#ifdef DEBUG
+    printf("splitting: block size: %uz, req size: %zuz\n",
+           GET_SIZE(HDRP(block)), block_size);
+#endif
     if (split(block, GET_SIZE(HDRP(block)) - block_size) == NULL) {
       printf("split error");
       return NULL;
@@ -302,9 +309,11 @@ void *mm_malloc(size_t req_size) {
   }
 
   // sanity check
-  // assert(!GET_ALLOC(HDRP(block)));
-  // printf("hdr: %u, ftr: %u\n", GET(HDRP(block)), GET(FTRP(block)));
-  // assert(GET(HDRP(block)) ==  GET(FTRP(block)));
+  assert(!GET_ALLOC(HDRP(block)));
+#ifdef DEBUG
+  printf("hdr: %u, ftr: %u\n", GET(HDRP(block)), GET(FTRP(block)));
+#endif
+  assert(GET(HDRP(block)) == GET(FTRP(block)));
 
   // mark block as allocated
   SET_ALLOC(HDRP(block), 1);
@@ -323,8 +332,13 @@ void mm_free(void *ptr) {
   // mark block as deallocated, and set footer
   SET_ALLOC(HDRP(ptr), 0);
   PUT(FTRP(ptr), GET(HDRP(ptr)));
+  // set the next block's "free_prev" to true
+  SET_PREV_FREE(HDRP(NEXT_BLKP(ptr)), 1);
 
-  coalesce(ptr);
+  void *freed = coalesce(ptr);
+#ifdef DEBUG
+  printf("new block: %u\n", GET_SIZE(HDRP(freed)));
+#endif
   return;
 }
 
@@ -332,15 +346,42 @@ void mm_free(void *ptr) {
  * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
  */
 void *mm_realloc(void *ptr, size_t size) {
-  printf("realloc called\n");
+#ifdef DEBUG
+  printf("realloc called for size %zu\n", size);
+#endif
   if (ptr == NULL) {
     return mm_malloc(size);
   }
+
+  unsigned int block_size = GET_SIZE(HDRP(ptr));
+
+  // if the requested size is smaller then the current block, we truncate
+  if (block_size >= BLOCK_SIZE(size)) {
+    // if the difference can make for another block we split it
+    split(ptr, block_size - BLOCK_SIZE(size));
+    return ptr;
+  }
+
+  // we have to find a larger block
+
+  // can we coalsce the next block?
+  // is the next block free, and does the sum of current block and next block
+  // suffice
+  if (!GET_ALLOC(HDRP(NEXT_BLKP(ptr))) &&
+      GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size >=
+          BLOCK_SIZE(size)) {
+    // update the size
+    SET_SIZE(HDRP(ptr), GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size);
+    // set the block after the next bloack we coalesced with to
+    SET_PREV_FREE(HDRP(NEXT_BLKP(ptr)), 0);
+    return ptr;
+  }
+
   void *new_block = mm_malloc(size);
   if (!new_block) {
     return NULL;
   }
-  memcpy(new_block, ptr, GET_SIZE(HDRP(ptr)));
+  memcpy(new_block, ptr, block_size - WSIZE);
   mm_free(ptr);
-  return NULL;
+  return new_block;
 }
