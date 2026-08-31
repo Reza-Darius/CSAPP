@@ -13,7 +13,7 @@ mdriver: $(OBJS)
 
 mdriver.o: mdriver.c fsecs.h fcyc.h clock.h memlib.h config.h mm.h driverlib.h
 memlib.o: memlib.c memlib.h
-mm.o: mm2.c mm.h memlib.h
+mm.o: mm.c mm.h memlib.h
 	$(CC) $(CFLAGS) -c $< -o $@
 fsecs.o: fsecs.c fsecs.h config.h
 fcyc.o: fcyc.c fcyc.h

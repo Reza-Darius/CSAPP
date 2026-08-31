@@ -26,10 +26,7 @@ _Static_assert(sizeof(unsigned int) == 4, "unsigned int isn't 32-bit");
 /* Basic constants and macros */
 #define WSIZE 4             /* Word and header/footer size () */
 #define DSIZE 8             /* Double word size () */
-#define CHUNKSIZE (1 << 12) /* Extend heap by this amount (bytes) */
 #define BLOCK_MIN_SIZE (4 * WSIZE)
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
 
 /* Pack a size and allocated bit into a word */
 #define PACK(size, prv_free, alloc) ((size) | (alloc) | (prv_free << 1))
