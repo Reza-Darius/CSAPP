@@ -1,0 +1,2 @@
+test:
+  ./mdriver -V -t traces 

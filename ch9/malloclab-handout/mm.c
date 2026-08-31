@@ -170,7 +170,9 @@ void *coalesce(void *bp) {
 
   // coalesce with next block if possible
   if (next_free) {
+    #ifdef DEBUG
     printf("coalesced with next\n");
+    #endif
     // add sizes together, and write new values
     new_size = GET_SIZE(HDRP(bp)) + GET_SIZE(HDRP(nxt_bl));
     PUT(HDRP(bp), PACK(new_size, prev_free, 0));
@@ -179,7 +181,9 @@ void *coalesce(void *bp) {
 
   // coalesce with previous block if possible
   if (prev_free) {
+    #ifdef DEBUG
     printf("coalesced with prev\n");
+    #endif
     prev_bl = PREV_BLKP(bp);
 
     // invariant: we cant ever have two free blocks adjacent
@@ -206,7 +210,9 @@ void *find_free_block(void *bp, size_t req_size) {
 
   while (!IS_END(bp) && (char *)bp < heap_end) {
     if (!GET_ALLOC(HDRP(bp)) && GET_SIZE(HDRP(bp)) >= req_size) {
+      #ifdef DEBUG
       printf("found block at: %p for req_size: %zu\n", bp, req_size);
+      #endif
       return bp;
     }
     bp = NEXT_BLKP(bp);
@@ -261,7 +267,9 @@ void *split(void *bp, size_t split_n) {
  *     Always allocate a block whose size is a multiple of the alignment.
  */
 void *mm_malloc(size_t req_size) {
-  // printf("malloc called: %zu\n", req_size);
+  #ifdef DEBUG
+  printf("malloc called: %zu\n", req_size);
+  #endif //DEBUG
   void *block;
   size_t block_size;
 
@@ -284,7 +292,9 @@ void *mm_malloc(size_t req_size) {
   }
 
   if (GET_SIZE(HDRP(block)) > block_size) {
+    #ifdef DEBUG
     printf("splitting: block size: %uz, req size: %zuz\n", GET_SIZE(HDRP(block)), block_size);
+    #endif
     if (split(block, GET_SIZE(HDRP(block)) - block_size) == NULL) {
       printf("split error");
       return NULL;
@@ -327,6 +337,9 @@ void *mm_realloc(void *ptr, size_t size) {
     return mm_malloc(size);
   }
   void *new_block = mm_malloc(size);
+  if (!new_block) {
+    return NULL;
+  }
   memcpy(new_block, ptr, GET_SIZE(HDRP(ptr)));
   mm_free(ptr);
   return NULL;
