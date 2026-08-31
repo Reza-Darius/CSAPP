@@ -204,7 +204,7 @@ void *coalesce(void *bp) {
 void *find_free_block(void *bp, size_t req_size) {
   assert(req_size % 8 == 0);
 
-  while (!IS_END(bp) && (char*) bp < heap_end) {
+  while (!IS_END(bp) && (char *)bp < heap_end) {
     if (!GET_ALLOC(HDRP(bp)) && GET_SIZE(HDRP(bp)) >= req_size) {
       printf("found block at: %p for req_size: %zu\n", bp, req_size);
       return bp;
@@ -249,7 +249,7 @@ void *split(void *bp, size_t split_n) {
   }
 
   // calculate offset, and write new split off block
-  split_block = (char *)bp + split_n;
+  split_block = (char *)bp + (old_size - split_n);
   PUT(HDRP(split_block), PACK(split_n, 0, 0));
   PUT(FTRP(split_block), PACK(split_n, 0, 0));
 
@@ -261,7 +261,7 @@ void *split(void *bp, size_t split_n) {
  *     Always allocate a block whose size is a multiple of the alignment.
  */
 void *mm_malloc(size_t req_size) {
-  printf("malloc called: %zu\n", req_size);
+  // printf("malloc called: %zu\n", req_size);
   void *block;
   size_t block_size;
 
@@ -284,6 +284,7 @@ void *mm_malloc(size_t req_size) {
   }
 
   if (GET_SIZE(HDRP(block)) > block_size) {
+    printf("splitting: block size: %uz, req size: %zuz\n", GET_SIZE(HDRP(block)), block_size);
     if (split(block, GET_SIZE(HDRP(block)) - block_size) == NULL) {
       printf("split error");
       return NULL;
@@ -321,18 +322,12 @@ void mm_free(void *ptr) {
  * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
  */
 void *mm_realloc(void *ptr, size_t size) {
-  // void *oldptr = ptr;
-  // void *newptr;
-  // size_t copySize;
-  //
-  // newptr = mm_malloc(size);
-  // if (newptr == NULL)
-  //   return NULL;
-  // copySize = *(size_t *)((char *)oldptr - SIZE_T_SIZE);
-  // if (size < copySize)
-  //   copySize = size;
-  // memcpy(newptr, oldptr, copySize);
-  // mm_free(oldptr);
-  // return newptr;
+  printf("realloc called\n");
+  if (ptr == NULL) {
+    return mm_malloc(size);
+  }
+  void *new_block = mm_malloc(size);
+  memcpy(new_block, ptr, GET_SIZE(HDRP(ptr)));
+  mm_free(ptr);
   return NULL;
 }
