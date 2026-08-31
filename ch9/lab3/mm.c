@@ -19,22 +19,6 @@
 #include "memlib.h"
 #include "mm.h"
 
-/*********************************************************
- * NOTE TO STUDENTS: Before you do anything else, please
- * provide your team information in the following struct.
- ********************************************************/
-team_t team = {
-    /* Team name */
-    "ateam",
-    /* First member's full name */
-    "Harry Bovik",
-    /* First member's email address */
-    "bovik@cs.cmu.edu",
-    /* Second member's full name (leave blank if none) */
-    "",
-    /* Second member's email address (leave blank if none) */
-    ""};
-
 /* single word (4) or double word (8) alignment */
 #define ALIGNMENT 8
 
@@ -74,9 +58,9 @@ team_t team = {
 #define SET_PREV_FREE(p, prev_free)                                            \
   (PUT(p, ((GET(p) & ~0x2) | (prev_free << 1))))
 
-#define GET_NEXT_FREE(bp) ((void *)GET((char *)(bp) + WSIZE))
-#define SET_NEXT_FREE(bp, np) (PUT(((char *)(bp) + WSIZE), ((unsigned int)np)))
-
+// macros for doubly linked list
+#define GET_NEXT(bp) ((void *)GET((char *)(bp) + WSIZE))
+#define SET_NEXT(bp, np) (PUT(((char *)(bp) + WSIZE), ((unsigned int)np)))
 #define GET_PREV(bp) ((void *)GET((char *)(bp)))
 #define SET_PREV(bp, pp) (PUT(((char *)(bp)), ((unsigned int)np)))
 
@@ -107,7 +91,7 @@ void *split(void *bp, size_t block_size);
  */
 int mm_init(void) {
   // get a start allocation
-  if (mem_sbrk(WSIZE * 4) < 0) {
+  if (mem_sbrk(WSIZE * 4) == (void *)-1) {
     return -1;
   }
 
@@ -136,7 +120,7 @@ void *grow_heap(size_t size) {
   // round up to multiples of 8 and make space for epilogue header
   size = ALIGN(size);
 
-  if ((new = mem_sbrk(size)) < 0) {
+  if ((new = mem_sbrk(size)) == (void *)-1) {
     return NULL;
   }
 
@@ -162,6 +146,8 @@ void *grow_heap(size_t size) {
 //
 // returns the pointer to the coalesced block
 void *coalesce(void *bp) {
+  assert(!IS_END(bp));
+
   void *nxt_bl, *prev_bl;
   size_t new_size, prev_free, next_free;
 
@@ -191,6 +177,7 @@ void *coalesce(void *bp) {
     // invariant: we cant ever have two free blocks adjacent
     // so we assert that the the block before the previous block wasnt declared
     // unallocated
+    assert(!GET_ALLOC(HDRP(prev_bl)));
     assert(!GET_PREV_FREE(HDRP(prev_bl)));
 
     // add sizes together, and write new values
@@ -223,7 +210,7 @@ void *find_free_block(void *bp, size_t req_size) {
 }
 
 /// splits off split_n from block bp
-///
+/// the split block header has the same flags but different size
 /// returns pointer to split off block, or NULL on error
 void *split(void *bp, size_t split_n) {
   assert(split_n % 8 == 0);
@@ -261,9 +248,11 @@ void *split(void *bp, size_t split_n) {
 
   // calculate offset, and write new split off block
   split_block = (char *)bp + (old_size - split_n);
-  PUT(HDRP(split_block), PACK(split_n, 0, 0));
-  PUT(FTRP(split_block), PACK(split_n, 0, 0));
-  SET_PREV_FREE(HDRP(NEXT_BLKP(split_block)), 1);
+  PUT(HDRP(split_block), PACK(split_n, GET_PREV_FREE(HDRP(bp)), 0));
+  if (!GET_ALLOC(HDRP(split_block))) {
+    PUT(FTRP(split_block), PACK(split_n, GET_PREV_FREE(HDRP(bp)), 0));
+  }
+  SET_PREV_FREE(HDRP(NEXT_BLKP(split_block)), GET_PREV_FREE(HDRP(bp)));
 
   return split_block;
 };
@@ -328,6 +317,9 @@ void *mm_malloc(size_t req_size) {
  * mm_free - Freeing a block does nothing.
  */
 void mm_free(void *ptr) {
+  if (ptr == NULL) {
+    return;
+  }
   // printf("free called: %p\n", ptr);
   // mark block as deallocated, and set footer
   SET_ALLOC(HDRP(ptr), 0);
@@ -335,7 +327,7 @@ void mm_free(void *ptr) {
   // set the next block's "free_prev" to true
   SET_PREV_FREE(HDRP(NEXT_BLKP(ptr)), 1);
 
-  void *freed = coalesce(ptr);
+  coalesce(ptr);
 #ifdef DEBUG
   printf("new block: %u\n", GET_SIZE(HDRP(freed)));
 #endif
@@ -349,6 +341,9 @@ void *mm_realloc(void *ptr, size_t size) {
 #ifdef DEBUG
   printf("realloc called for size %zu\n", size);
 #endif
+  if (size == 0) {
+    return NULL;
+  }
   if (ptr == NULL) {
     return mm_malloc(size);
   }
@@ -368,11 +363,10 @@ void *mm_realloc(void *ptr, size_t size) {
   // is the next block free, and does the sum of current block and next block
   // suffice
   if (!GET_ALLOC(HDRP(NEXT_BLKP(ptr))) &&
-      GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size >=
-          BLOCK_SIZE(size)) {
+      GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size >= BLOCK_SIZE(size)) {
     // update the size
     SET_SIZE(HDRP(ptr), GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size);
-    // set the block after the next bloack we coalesced with to
+    // set the block after the next block
     SET_PREV_FREE(HDRP(NEXT_BLKP(ptr)), 0);
     return ptr;
   }
@@ -385,3 +379,8 @@ void *mm_realloc(void *ptr, size_t size) {
   mm_free(ptr);
   return new_block;
 }
+
+void mm_checkheap(int verbose) {
+  printf("not implemented %d\n", verbose);
+  return;
+};
