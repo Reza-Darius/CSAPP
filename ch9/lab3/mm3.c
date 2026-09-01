@@ -1,5 +1,5 @@
 /*
- * memory allocator with explicit free list
+ * memory allocator with segregated free lists
  */
 #include <assert.h>
 #include <stddef.h>
@@ -77,7 +77,7 @@ _Static_assert(sizeof(unsigned int) == 4, "unsigned int isn't 32-bit");
   (!GET_ALLOC(HDRP(bp)) && GET_SIZE(HDRP(bp)) >= req_size)
 
 // macros for initialization
-#define SEG_COUNT 6
+#define SEG_COUNT 16
 #define PREAMBLE_SIZE (ALIGN(SEG_COUNT * WSIZE + 3 * WSIZE))
 #define PROL_OFFSET (ALIGN(SEG_COUNT * WSIZE + 2 * WSIZE) - WSIZE)
 #define EPIL_OFFSET (PREAMBLE_SIZE - WSIZE)
@@ -115,20 +115,49 @@ void *split(void *bp, size_t block_size);
 // retrieves the list the free block belongs to
 // always returns a list
 void **get_list(size_t size) {
-  char *arr = (char *)seg_list_arr;
-  int idx;
 
-  // determine the largest needed bucket by shifting to the right
-  // we only check for buckets that arent the largetst catch-all bucket
-  for (idx = 0; idx < SEG_COUNT - 1; idx++) {
-    if (size >> (SEG_COUNT + idx) == 1)
-      break;
+  char *arr = (char *)seg_list_arr;
+
+  // finding the MSB to use as an index
+  unsigned int v = size;   // 32-bit value to find the log2 of
+  register unsigned int r; // result of log2(v) will go here
+  register unsigned int shift;
+
+  r = (v > 0xFFFF) << 4;
+  v >>= r;
+  shift = (v > 0xFF) << 3;
+  v >>= shift;
+  r |= shift;
+  shift = (v > 0xF) << 2;
+  v >>= shift;
+  r |= shift;
+  shift = (v > 0x3) << 1;
+  v >>= shift;
+  r |= shift;
+  r |= (v >> 1);
+
+  if (r < 0) {
+    r = 0;
   }
 
-#ifdef DEBUG
-  printf("got idx %d for size %zu\n", idx, size);
-#endif
-  return (void **)(arr + (idx * WSIZE));
+  if (r >= SEG_COUNT) {
+    r = SEG_COUNT - 1;
+  }
+  return (void **)(arr + (r * WSIZE));
+  //   char *arr = (char *)seg_list_arr;
+  //   int idx;
+  //
+  //   // determine the largest needed bucket by shifting to the right
+  //   // we only check for buckets that arent the largetst catch-all bucket
+  //   for (idx = 0; idx < SEG_COUNT - 1; idx++) {
+  //     if (size >> (SEG_COUNT + idx) == 1)
+  //       break;
+  //   }
+  //
+  // #ifdef DEBUG
+  //   printf("got idx %d for size %zu\n", idx, size);
+  // #endif
+  //   return (void **)(arr + (idx * WSIZE));
 }
 Block new_block(size_t size, unsigned int prev_free, unsigned int alloc) {
   assert(size % 8 == 0);
@@ -412,7 +441,6 @@ void *split(void *bp, size_t split_n) {
 
   // calculate offset, and write new split off block
   split_block = (char *)bp + (old_size - split_n);
-  // write_block(split_block, new_block(split_n, GET_PREV_FREE(HDRP(bp)), 0));
   write_block(split_block, new_block(split_n, 0, 0));
 
   // we might split off of realloc, so we need to account for a new
@@ -519,7 +547,8 @@ void *mm_realloc(void *ptr, size_t size) {
   if (!GET_ALLOC(HDRP(NEXT_BLKP(ptr))) &&
       GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size >= BLOCK_SIZE(size)) {
 #ifdef DEBUG
-    printf("realloc coalesce next block to size %p %zu\n", NEXT_BLKP(ptr), size);
+    printf("realloc coalesce next block to size %p %zu\n", NEXT_BLKP(ptr),
+           size);
 #endif
     disc_bp(NEXT_BLKP(ptr));
     // update the size
