@@ -24,9 +24,11 @@ _Static_assert(sizeof(void *) == 4, "pointer isn't 32-bit");
 _Static_assert(sizeof(unsigned int) == 4, "unsigned int isn't 32-bit");
 
 /* Basic constants and macros */
-#define WSIZE 4             /* Word and header/footer size () */
-#define DSIZE 8             /* Double word size () */
+#define WSIZE 4 /* Word and header/footer size () */
+#define DSIZE 8 /* Double word size () */
 #define BLOCK_MIN_SIZE (4 * WSIZE)
+#define CHUNKSIZE (1 << 12) /* Extend heap by this amount (bytes) */
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
 
 /* Pack a size and allocated bit into a word */
 #define PACK(size, prv_free, alloc) ((size) | (alloc) | (prv_free << 1))
@@ -67,23 +69,13 @@ _Static_assert(sizeof(unsigned int) == 4, "unsigned int isn't 32-bit");
 #define BLOCK_TO_BP(block_addr) ((void *)((char *)(block_addr) + WSIZE))
 #define BP_TO_BLOCK(bp) ((Block *)((char *)(bp) - WSIZE))
 
-// macros for doubly linked list
+// // macros for doubly linked list
 #define GET_NEXT(block) (GET(block))
 #define SET_NEXT(block, np) (PUT(block, (unsigned int)(np)))
 #define GET_PREV(block) (GET((char *)(block) + WSIZE))
 #define SET_PREV(block, pp) (PUT(((char *)(block) + WSIZE), (unsigned int)(pp)))
-
-// new block api
-#define NEXT_BLOCK(block) ((char*)(block) + GET_SIZE(block)))
-#define PREV_BLOCK(block) ((char*)(block) + GET_SIZE((char*)(block) - WSIZE))
-#define FTR_PTR(block) ((char *)(block) + GET_SIZE(block) - WSIZE)
-#define SET_FTR(block, val) (PUT(FTR_PTR(block)), val)
-
-#define IS_ALLOC(block) (GET_ALLOC(block))
-#define IS_PREV_FREE(block) (GET_PREV_FREE(block))
-
-#define SET_BP_ALLOC(bp, alloc) (SET_ALLOC(HDRP(bp), alloc))
-#define SET_BP_PREV_ALLOC(bp, alloc) (SET_ALLOC(HDRP(bp), alloc))
+#define FIRST_FIT(bp, size)                                                    \
+  (!GET_ALLOC(HDRP(bp)) && GET_SIZE(HDRP(bp)) >= req_size)
 
 // head of the list, points to block
 void *list_head;
@@ -96,28 +88,24 @@ typedef struct Block {
   void *prev;
 } Block;
 
-unsigned int is_alloc(Block *block);
-unsigned int prev_alloc(Block *block);
-unsigned int get_size(Block *block);
-
+// helper routines
 Block new_block(size_t size, unsigned int prev_alloc, unsigned int alloc);
 void write_block(void *bp, Block block);
-void disc_bp(void *bp);
-
+void disc_bp(void **list, void *bp);
 void prepend_list(void **list, void *bp);
 
-void *find_free_block(void *bp, size_t block_size);
+void *find_free_block(void **list, size_t block_size);
 void *grow_heap(size_t size);
 void *coalesce(void *bp);
 void *split(void *bp, size_t block_size);
 
 Block new_block(size_t size, unsigned int prev_free, unsigned int alloc) {
   assert(size % 8 == 0);
-
-  Block bl;
-  bl.hdr = size | (!!prev_free << 1) | !!alloc;
-  bl.next = 0;
-  bl.prev = 0;
+  Block bl = {
+      .hdr = size | (!!prev_free << 1) | !!alloc,
+      .next = 0,
+      .prev = 0,
+  };
   return bl;
 };
 
@@ -127,67 +115,77 @@ void prepend_list(void **list, void *bp) {
   assert(bp != NULL);
   assert(!GET_ALLOC(HDRP(bp)));
 
+  Block *new_bl = BP_TO_BLOCK(bp);
+
+  // list is empty, we just point to the new block
   if (*list == NULL) {
+    new_bl->prev = 0;
+    new_bl->next = 0;
     *list = bp;
     return;
   }
   assert((char *)*list < heap_end);
 
-  Block *new_bl = BP_TO_BLOCK(bp);
-  Block *old_head = BP_TO_BLOCK(*list);
+  Block *head = BP_TO_BLOCK(*list);
 
-  if (new_bl == old_head) {
+  // block is list header
+  if (new_bl == head) {
     return;
   }
 
-  // disc_bp(bp);
-
-  old_head->prev = bp;
-  new_bl->next = *list;
+  // attach new block
+  head->prev = BLOCK_TO_BP(new_bl);
+  new_bl->next = BLOCK_TO_BP(head);
   new_bl->prev = 0;
-  *list = bp;
+
+  // list points to new block
+  *list = BLOCK_TO_BP(new_bl);
   return;
 };
 
 // write block to bp
 void write_block(void *bp, Block block) {
-  PUT(HDRP(bp), block.hdr);
+  Block *bl = BP_TO_BLOCK(bp);
+  *bl = block;
   if (!GET_ALLOC(HDRP(bp))) {
     PUT(FTRP(bp), block.hdr);
     SET_PREV_FREE(HDRP(NEXT_BLKP(bp)), 1);
   }
-  SET_NEXT(bp, 0);
-  SET_PREV(bp, 0);
+  bl->next = 0;
+  bl->prev = 0;
   return;
 };
 
 // disconnects a block and reconnects the next and previous blocks
 // should only be called on free blocks
-void disc_bp(void *bp) {
+void disc_bp(void **list, void *bp) {
   assert(bp != NULL);
   assert(!GET_ALLOC(HDRP(bp)));
+  Block *bl;
+
+  bl = BP_TO_BLOCK(bp);
 
   // handling disconnecting the head
-  if (bp == list_head) {
-    if (GET_NEXT(bp) == 0 && GET_PREV(bp) == 0) {
-      list_head = NULL;
-    } else if (GET_NEXT(bp)) {
-      list_head = (void *)GET_NEXT(bp);
-      SET_PREV(GET_NEXT(bp), 0);
+  if (bp == *list) {
+    if (!bl->next && !bl->prev) {
+      *list = NULL;
+    } else if (bl->next) {
+      *list = bl->next;
+      SET_PREV(bl->next, 0);
     }
-    SET_NEXT(bp, 0);
-    SET_PREV(bp, 0);
+    bl->next = 0;
+    bl->prev = 0;
     return;
   }
 
-  if (GET_NEXT(bp) != 0) {
-    SET_PREV(GET_NEXT(bp), GET_PREV(bp));
+  if (bl->next) {
+    SET_PREV(bl->next, bl->prev);
   }
-  if (GET_PREV(bp) != 0) {
-    SET_NEXT(GET_PREV(bp), GET_NEXT(bp));
+  if (bl->prev) {
+    SET_NEXT(bl->prev, bl->next);
   }
-  SET_NEXT(bp, 0);
-  SET_PREV(bp, 0);
+  bl->next = 0;
+  bl->prev = 0;
   return;
 };
 
@@ -227,9 +225,6 @@ void *grow_heap(size_t size) {
     return NULL;
   }
 
-  // round up to multiples of 8 and make space for epilogue header
-  size = ALIGN(size);
-
   if ((new = mem_sbrk(size)) == (void *)-1) {
     printf("sbrk error\n");
     return NULL;
@@ -257,8 +252,6 @@ void *grow_heap(size_t size) {
 void *coalesce(void *bp) {
   assert(!IS_END(bp));
   assert(!GET_ALLOC(HDRP(bp)));
-  assert(GET_NEXT(bp) == 0);
-  assert(GET_PREV(bp) == 0);
 
   void *nxt_bl, *prev_bl;
   size_t new_size, prev_free, next_free;
@@ -273,7 +266,7 @@ void *coalesce(void *bp) {
 #ifdef DEBUG
     printf("coalesced with next\n");
 #endif
-    disc_bp(nxt_bl);
+    disc_bp(&list_head, nxt_bl);
     // add sizes together, and write new values
     new_size = GET_SIZE(HDRP(bp)) + GET_SIZE(HDRP(nxt_bl));
     PUT(HDRP(bp), PACK(new_size, prev_free, 0));
@@ -314,16 +307,18 @@ void *coalesce(void *bp) {
 // walk the list and find a "first fit" block
 //
 // returns null if the heap is full or it cant find an appropiate block
-void *find_free_block(void *bp, size_t req_size) {
+void *find_free_block(void **list, size_t req_size) {
   assert(req_size % 8 == 0);
+  void *bp = *list;
 
-  while (bp != NULL && !IS_END(bp) && (char *)bp < heap_end) {
-    if (!GET_ALLOC(HDRP(bp)) && GET_SIZE(HDRP(bp)) >= req_size) {
+  while (bp != NULL && !IS_END(bp)) {
+    if (FIRST_FIT(bp, size)) {
 #ifdef DEBUG
       printf("found block at: %p for req_size: %zu\n", bp, req_size);
 #endif
       return bp;
     }
+
     bp = (void *)GET_NEXT(bp);
   }
   return NULL;
@@ -370,15 +365,11 @@ void *split(void *bp, size_t split_n) {
   split_block = (char *)bp + (old_size - split_n);
   write_block(split_block, new_block(split_n, GET_PREV_FREE(HDRP(bp)), 0));
 
-  // we might split off of realloc, so we need to account for a new 
+  // we might split off of realloc, so we need to account for a new
   // free block appearing
   return coalesce(split_block);
 };
 
-/*
- * mm_malloc - Allocate a block by incrementing the brk pointer.
- *     Always allocate a block whose size is a multiple of the alignment.
- */
 void *mm_malloc(size_t req_size) {
 #ifdef DEBUG
   printf("malloc called: %zu\n", req_size);
@@ -394,13 +385,12 @@ void *mm_malloc(size_t req_size) {
   // smaller than that
   if (req_size < BLOCK_MIN_SIZE) {
     req_size = BLOCK_MIN_SIZE;
-  } 
+  }
   block_size = BLOCK_SIZE(req_size);
 
-  if ((block = find_free_block(list_head, block_size)) == NULL) {
+  if ((block = find_free_block(&list_head, block_size)) == NULL) {
     // we need to extend the heap
     if ((block = grow_heap(block_size)) == NULL) {
-      printf("grow heap error");
       return NULL;
     }
   }
@@ -410,15 +400,12 @@ void *mm_malloc(size_t req_size) {
     printf("splitting: block size: %uz, req size: %zuz\n",
            GET_SIZE(HDRP(block)), block_size);
 #endif
-    if (split(block, GET_SIZE(HDRP(block)) - block_size) == NULL) {
-      // printf("split error");
-      // return NULL;
-    }
+    split(block, GET_SIZE(HDRP(block)) - block_size);
   }
 
-  disc_bp(block);
+  disc_bp(&list_head, block);
 
-  // sanity check
+  // sanity checks
   assert(!GET_ALLOC(HDRP(block)));
 #ifdef DEBUG
   printf("hdr: %u, ftr: %u\n", GET(HDRP(block)), GET(FTRP(block)));
@@ -427,28 +414,23 @@ void *mm_malloc(size_t req_size) {
 
   // mark block as allocated
   SET_ALLOC(HDRP(block), 1);
-
   // mark next block's "prev free" as false
   SET_PREV_FREE(HDRP(NEXT_BLKP(block)), 0);
+
   // printf("allocated %u at %p\n", GET_SIZE(HDRP(block)), HDRP(block));
   return block;
 }
 
-/*
- * mm_free - Freeing a block does nothing.
- */
 void mm_free(void *ptr) {
   if (ptr == NULL) {
     return;
   }
-  // printf("free called: %p\n", ptr);
-
   // mark block as deallocated, and set footer
+  // set the next block's "free_prev" to true
   SET_ALLOC(HDRP(ptr), 0);
   SET_NEXT(ptr, 0);
   SET_PREV(ptr, 0);
   PUT(FTRP(ptr), GET(HDRP(ptr)));
-  // set the next block's "free_prev" to true
   SET_PREV_FREE(HDRP(NEXT_BLKP(ptr)), 1);
 
   coalesce(ptr);
@@ -458,9 +440,6 @@ void mm_free(void *ptr) {
   return;
 }
 
-/*
- * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
- */
 void *mm_realloc(void *ptr, size_t size) {
 #ifdef DEBUG
   printf("realloc called for size %zu\n", size);
@@ -475,20 +454,16 @@ void *mm_realloc(void *ptr, size_t size) {
   unsigned int block_size = GET_SIZE(HDRP(ptr));
 
   // if the requested size is smaller then the current block, we truncate
-  if (block_size >= BLOCK_SIZE(size)) {
+  if (block_size > BLOCK_SIZE(size)) {
     // if the difference can make for another block we split it
     split(ptr, block_size - BLOCK_SIZE(size));
     return ptr;
   }
 
-  // we have to find a larger block
-
-  // can we coalsce the next block?
-  // is the next block free, and does the sum of current block and next block
-  // suffice
+  // can we coalsce with the next block?
   if (!GET_ALLOC(HDRP(NEXT_BLKP(ptr))) &&
       GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size >= BLOCK_SIZE(size)) {
-    disc_bp(NEXT_BLKP(ptr));
+    disc_bp(&list_head, NEXT_BLKP(ptr));
     // update the size
     SET_SIZE(HDRP(ptr), GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size);
     // set the block after the next block
@@ -496,6 +471,7 @@ void *mm_realloc(void *ptr, size_t size) {
     return ptr;
   }
 
+  // we have to allocate a new block
   void *new_block = mm_malloc(size);
   if (!new_block) {
     return NULL;
