@@ -77,13 +77,19 @@ _Static_assert(sizeof(unsigned int) == 4, "unsigned int isn't 32-bit");
   (!GET_ALLOC(HDRP(bp)) && GET_SIZE(HDRP(bp)) >= req_size)
 
 // macros for initialization
-#define SEG_COUNT 0
+#define SEG_COUNT 6
 #define PREAMBLE_SIZE (ALIGN(SEG_COUNT * WSIZE + 3 * WSIZE))
 #define PROL_OFFSET (ALIGN(SEG_COUNT * WSIZE + 2 * WSIZE) - WSIZE)
 #define EPIL_OFFSET (PREAMBLE_SIZE - WSIZE)
 
+// seg list macros
+#define START_SIZE (4) // 1 << 4 = 16
+
 // head of the list, points to block
 void *list_head;
+
+// points to seg list pointers
+void **seg_list_arr;
 char *heap_end;
 
 // next and prev are defined as bp
@@ -98,14 +104,32 @@ void **get_list(size_t size);
 
 Block new_block(size_t size, unsigned int prev_alloc, unsigned int alloc);
 void write_block(void *bp, Block block);
-void disc_bp(void **list, void *bp);
-void prepend_list(void **list, void *bp);
+void disc_bp(void *bp);
+void prepend_list(void *bp);
 
-void *find_free_block(void **list, size_t block_size);
+void *find_free_block(size_t block_size);
 void *grow_heap(size_t size);
 void *coalesce(void *bp);
 void *split(void *bp, size_t block_size);
 
+// retrieves the list the free block belongs to
+// always returns a list
+void **get_list(size_t size) {
+  char *arr = (char *)seg_list_arr;
+  int idx;
+
+  // determine the largest needed bucket by shifting to the right
+  // we only check for buckets that arent the largetst catch-all bucket
+  for (idx = 0; idx < SEG_COUNT - 1; idx++) {
+    if (size >> (SEG_COUNT + idx) == 1)
+      break;
+  }
+
+#ifdef DEBUG
+  printf("got idx %d for size %zu\n", idx, size);
+#endif
+  return (void **)(arr + (idx * WSIZE));
+}
 Block new_block(size_t size, unsigned int prev_free, unsigned int alloc) {
   assert(size % 8 == 0);
   Block bl = {
@@ -118,12 +142,15 @@ Block new_block(size_t size, unsigned int prev_free, unsigned int alloc) {
 
 // disconnects and prepends block at bp
 // list points to a bp
-void prepend_list(void **list, void *bp) {
+void prepend_list(void *bp) {
   assert(bp != NULL);
   assert(!GET_ALLOC(HDRP(bp)));
-
+  void **list = get_list(GET_SIZE(HDRP(bp)));
   Block *new_bl = BP_TO_BLOCK(bp);
 
+#ifdef DEBUG
+  printf("adding to list block at %p to list %p\n", bp, list);
+#endif
   // list is empty, we just point to the new block
   if (*list == NULL) {
     new_bl->prev = 0;
@@ -165,9 +192,13 @@ void write_block(void *bp, Block block) {
 
 // disconnects a block and reconnects the next and previous blocks
 // should only be called on free blocks
-void disc_bp(void **list, void *bp) {
+void disc_bp(void *bp) {
+#ifdef DEBUG
+  printf("disconnecting block at %p\n", bp);
+#endif
   assert(bp != NULL);
   assert(!GET_ALLOC(HDRP(bp)));
+  void **list = get_list(GET_SIZE(HDRP(bp)));
   Block *bl;
 
   bl = BP_TO_BLOCK(bp);
@@ -201,21 +232,23 @@ void disc_bp(void **list, void *bp) {
  */
 int mm_init(void) {
   assert(sizeof(Block) + WSIZE == BLOCK_MIN_SIZE);
-  char *heap_start;
+  char *new_heap;
 
   // get a start allocation
-  if ((heap_start = mem_sbrk(PREAMBLE_SIZE)) == (void *)-1) {
+  if ((new_heap = mem_sbrk(PREAMBLE_SIZE)) == (void *)-1) {
     return -1;
   }
 
   // init seg list
+  memset(new_heap, 0, PREAMBLE_SIZE);
 
   // we set the start block to size 8 and allocated
-  PUT(heap_start + PROL_OFFSET, PACK(DSIZE, 0, 1));
+  PUT(new_heap + PROL_OFFSET, PACK(DSIZE, 0, 1));
   // end block has special sentinal value of allocated without a size
-  PUT(heap_start + EPIL_OFFSET, PACK(0, 0, 1));
+  PUT(new_heap + EPIL_OFFSET, PACK(0, 0, 1));
 
-  heap_end = heap_start + PREAMBLE_SIZE;
+  heap_end = new_heap + PREAMBLE_SIZE;
+  seg_list_arr = (void **)new_heap;
   list_head = NULL;
 
   // assert(!IS_ALIGNED(list_head));
@@ -273,8 +306,8 @@ void *coalesce(void *bp) {
 #ifdef DEBUG
     printf("coalesced with next\n");
 #endif
-    disc_bp(&list_head, nxt_bl);
-    // add sizes together, and write new values
+    // disconnect block, add sizes together, and write new values
+    disc_bp(nxt_bl);
     new_size = GET_SIZE(HDRP(bp)) + GET_SIZE(HDRP(nxt_bl));
     PUT(HDRP(bp), PACK(new_size, prev_free, 0));
     PUT(FTRP(bp), PACK(new_size, prev_free, 0));
@@ -293,7 +326,8 @@ void *coalesce(void *bp) {
     assert(!GET_ALLOC(HDRP(prev_bl)));
     assert(!GET_PREV_FREE(HDRP(prev_bl)));
 
-    // add sizes together, and write new values
+    // disconnect block, add sizes together, and write new values
+    disc_bp(prev_bl);
     new_size = GET_SIZE(HDRP(bp)) + GET_SIZE(HDRP(prev_bl));
     PUT(HDRP(prev_bl), PACK(new_size, 0, 0));
     PUT(FTRP(prev_bl), PACK(new_size, 0, 0));
@@ -302,11 +336,7 @@ void *coalesce(void *bp) {
     bp = prev_bl;
   }
 
-  if (!prev_free) {
-    // we only append to list if we didnt coalesce at all, or coalesced with the
-    // next block onyl
-    prepend_list(&list_head, bp);
-  }
+  prepend_list(bp);
 
   return bp;
 }
@@ -314,19 +344,28 @@ void *coalesce(void *bp) {
 // walk the list and find a "first fit" block
 //
 // returns null if the heap is full or it cant find an appropiate block
-void *find_free_block(void **list, size_t req_size) {
+void *find_free_block(size_t req_size) {
   assert(req_size % 8 == 0);
-  void *bp = *list;
 
-  while (bp != NULL && !IS_END(bp)) {
-    if (FIRST_FIT(bp, size)) {
+  void **preferred_list = get_list(req_size);
+  void *bp;
+
+  // while the list pointed at is in the seg list array
+  while ((char *)preferred_list <
+         ((char *)seg_list_arr + (SEG_COUNT * WSIZE))) {
+    bp = *preferred_list;
+    while (bp != NULL && !IS_END(bp)) {
+      if (FIRST_FIT(bp, size)) {
 #ifdef DEBUG
-      printf("found block at: %p for req_size: %zu\n", bp, req_size);
+        printf("found block at: %p for req_size: %zu\n", bp, req_size);
 #endif
-      return bp;
-    }
+        return bp;
+      }
 
-    bp = (void *)GET_NEXT(bp);
+      bp = (void *)GET_NEXT(bp);
+    }
+    // we go to the next larger list
+    preferred_list++;
   }
   return NULL;
 }
@@ -339,6 +378,9 @@ void *split(void *bp, size_t split_n) {
   void *split_block;
   size_t old_size = GET_SIZE(HDRP(bp));
 
+#ifdef DEBUG
+  printf("splitting block %p of size %zu with %zu\n", bp, old_size, split_n);
+#endif // DEBUG
   // we cant split the prologue block
   if (IS_END(bp)) {
     return NULL;
@@ -370,7 +412,8 @@ void *split(void *bp, size_t split_n) {
 
   // calculate offset, and write new split off block
   split_block = (char *)bp + (old_size - split_n);
-  write_block(split_block, new_block(split_n, GET_PREV_FREE(HDRP(bp)), 0));
+  // write_block(split_block, new_block(split_n, GET_PREV_FREE(HDRP(bp)), 0));
+  write_block(split_block, new_block(split_n, 0, 0));
 
   // we might split off of realloc, so we need to account for a new
   // free block appearing
@@ -395,22 +438,21 @@ void *mm_malloc(size_t req_size) {
   }
   block_size = BLOCK_SIZE(req_size);
 
-  if ((block = find_free_block(&list_head, block_size)) == NULL) {
+  if ((block = find_free_block(block_size)) == NULL) {
     // we need to extend the heap
     if ((block = grow_heap(block_size)) == NULL) {
       return NULL;
     }
   }
 
+  disc_bp(block);
   if (GET_SIZE(HDRP(block)) > block_size) {
 #ifdef DEBUG
-    printf("splitting: block size: %uz, req size: %zuz\n",
-           GET_SIZE(HDRP(block)), block_size);
+    printf("splitting: block size: %u, req size: %zu\n", GET_SIZE(HDRP(block)),
+           block_size);
 #endif
     split(block, GET_SIZE(HDRP(block)) - block_size);
   }
-
-  disc_bp(&list_head, block);
 
   // sanity checks
   assert(!GET_ALLOC(HDRP(block)));
@@ -432,6 +474,9 @@ void mm_free(void *ptr) {
   if (ptr == NULL) {
     return;
   }
+#ifdef DEBUG
+  printf("freeing block at %p\n", ptr);
+#endif
   // mark block as deallocated, and set footer
   // set the next block's "free_prev" to true
   SET_ALLOC(HDRP(ptr), 0);
@@ -441,9 +486,6 @@ void mm_free(void *ptr) {
   SET_PREV_FREE(HDRP(NEXT_BLKP(ptr)), 1);
 
   coalesce(ptr);
-#ifdef DEBUG
-  printf("new block: %u\n", GET_SIZE(HDRP(freed)));
-#endif
   return;
 }
 
@@ -455,6 +497,9 @@ void *mm_realloc(void *ptr, size_t size) {
     return NULL;
   }
   if (ptr == NULL) {
+#ifdef DEBUG
+    printf("realloc calls malloc, ptr null\n");
+#endif
     return mm_malloc(size);
   }
 
@@ -462,6 +507,9 @@ void *mm_realloc(void *ptr, size_t size) {
 
   // if the requested size is smaller then the current block, we truncate
   if (block_size > BLOCK_SIZE(size)) {
+#ifdef DEBUG
+    printf("realloc truncated block to size %p %zu\n", ptr, size);
+#endif
     // if the difference can make for another block we split it
     split(ptr, block_size - BLOCK_SIZE(size));
     return ptr;
@@ -470,13 +518,22 @@ void *mm_realloc(void *ptr, size_t size) {
   // can we coalsce with the next block?
   if (!GET_ALLOC(HDRP(NEXT_BLKP(ptr))) &&
       GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size >= BLOCK_SIZE(size)) {
-    disc_bp(&list_head, NEXT_BLKP(ptr));
+#ifdef DEBUG
+    printf("realloc coalesce next block to size %p %zu\n", NEXT_BLKP(ptr), size);
+#endif
+    disc_bp(NEXT_BLKP(ptr));
     // update the size
     SET_SIZE(HDRP(ptr), GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size);
     // set the block after the next block
     SET_PREV_FREE(HDRP(NEXT_BLKP(ptr)), 0);
+
+    // // readjust
+    // split(ptr, block_size - BLOCK_SIZE(size));
     return ptr;
   }
+#ifdef DEBUG
+  printf("realloc calls malloc\n");
+#endif
 
   // we have to allocate a new block
   void *new_block = mm_malloc(size);
@@ -489,17 +546,25 @@ void *mm_realloc(void *ptr, size_t size) {
 }
 
 void mm_checkheap(int verbose) {
-  // print freelist
-  void *bp = list_head;
-  int count = 0;
+  // print freelists
+  void **list = seg_list_arr;
+  void *bp;
   Block *bl;
-  while (bp != NULL && (char *)bp < heap_end) {
-    bl = BP_TO_BLOCK(bp);
-    printf("free list entry [%d] at [%p], size: [%u], next: [%p], prev: [%p]\n",
-           count, (char *)bl + WSIZE, GET_SIZE(HDRP(BLOCK_TO_BP(bl))), bl->next,
-           bl->prev);
-    bp = (void *)GET_NEXT(bp);
-    count++;
-  }
+  int count;
+  for (int i = 0; i < SEG_COUNT;) {
+    bp = *list;
+    count = 0;
+    while (bp != NULL && (char *)bp < heap_end) {
+      bl = BP_TO_BLOCK(bp);
+      printf("free list [%d] entry [%d] at [%p], size: [%u], next: [%p], prev: "
+             "[%p]\n",
+             i, count, (char *)bl + WSIZE, GET_SIZE(HDRP(BLOCK_TO_BP(bl))),
+             bl->next, bl->prev);
+      bp = (void *)GET_NEXT(bp);
+      count++;
+    }
+    list++;
+    i++;
+  };
   return;
 };
